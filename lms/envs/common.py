@@ -384,6 +384,8 @@ FEATURES = {
 
     # Course discovery feature
     'ENABLE_COURSE_DISCOVERY': False,
+
+    'LICENSING': True,
 }
 
 # Ignore static asset files on import which match this pattern
