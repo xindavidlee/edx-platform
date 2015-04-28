@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="556px" height="556px" viewBox="0 0 556 556" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.3.1 (12002) - http://www.bohemiancoding.com/sketch -->
+    <title>demo-ico-distinguished</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="SCRATCH" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="demo-ico-distinguished" sketch:type="MSArtboardGroup">
+            <g id="Mark" sketch:type="MSLayerGroup">
+                <rect id="FILL" stroke="#979797" fill="#0079BC" sketch:type="MSShapeGroup" x="0" y="0" width="556" height="556"></rect>
+                <g id="Group" transform="translate(150.000000, 92.000000)" font-family="FontAwesome" fill="#FBFBFB" sketch:type="MSTextLayer" font-weight="normal">
+                    <text id="" font-size="275">
+                        <tspan x="0" y="332.5"></tspan>
+                    </text>
+                    <text id="" font-size="100">
+                        <tspan x="81.5" y="86.5"></tspan>
+                    </text>
+                    <text id="-copy" font-size="50">
+                        <tspan x="18.5" y="93.0714286"></tspan>
+                    </text>
+                    <text id="-copy-2" font-size="50">
+                        <tspan x="188.5" y="93.0714286"></tspan>
+                    </text>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
