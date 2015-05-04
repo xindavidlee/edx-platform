@@ -71,6 +71,9 @@ FEATURES['ENABLE_EDXNOTES'] = True
 # Enable teams feature
 FEATURES['ENABLE_TEAMS'] = True
 
+FEATURES['ENABLE_MOBILE_REST_API'] = True  # Enable video bumper in Studio
+FEATURES['ENABLE_VIDEO_BUMPER'] = True  # Enable video bumper in Studio settings
+
 ########################### Entrance Exams #################################
 FEATURES['ENTRANCE_EXAMS'] = True
 
