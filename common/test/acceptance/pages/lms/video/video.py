@@ -18,7 +18,7 @@ VIDEO_BUTTONS = {
     'play': '.video_control.play',
     'pause': '.video_control.pause',
     'fullscreen': '.add-fullscreen',
-    'download_transcript': '.video-tracks > a',
+    'download_transcript': '.video-tracks .download-link',
     'speed': '.speeds',
     'quality': '.quality-control',
 }
@@ -48,8 +48,9 @@ VIDEO_MODES = {
 VIDEO_MENUS = {
     'language': '.lang .menu',
     'speed': '.speed .menu',
-    'download_transcript': '.video-tracks .a11y-menu-list',
-    'transcript-format': '.video-tracks .a11y-menu-button'
+    'download_transcript': '.video-tracks .dropdown-menu',
+    'transcript-format': '.video-tracks .button-more.has-dropdown',
+    'transcript-format-new': '.video-tracks .download-link'
 }
 
 
@@ -465,9 +466,10 @@ class VideoPage(PageObject):
             bool: Transcript download result.
 
         """
-        transcript_selector = self.get_element_selector(VIDEO_MENUS['transcript-format'])
+        transcript_selector = self.get_element_selector(VIDEO_MENUS['transcript-format-new'])
 
         # check if we have a transcript with correct format
+        # does this assume ONLY this text, or can it be text found within a string?
         if '.' + transcript_format not in self.q(css=transcript_selector).text[0]:
             return False
 
@@ -566,21 +568,36 @@ class VideoPage(PageObject):
             bool: Selection Result.
 
         """
-        button_selector = self.get_element_selector(VIDEO_MENUS['transcript-format'])
+        button_selector = self.get_element_selector(VIDEO_MENUS['transcript-format']) # .video-tracks .button-more.has-dropdown
 
         button = self.q(css=button_selector).results[0]
 
         coord_y = button.location_once_scrolled_into_view['y']
         self.browser.execute_script("window.scrollTo(0, {});".format(coord_y))
 
-        hover = ActionChains(self.browser).move_to_element(button)
-        hover.perform()
+        # New markup/button no longer functions on hover, but on click
+        # Commenting out for now; need to update or remove.
 
-        if '...' not in self.q(css=button_selector).text[0]:
-            return False
+        # hover = ActionChains(self.browser).move_to_element(button)
+        # hover.perform()
 
-        menu_selector = self.get_element_selector(VIDEO_MENUS['download_transcript'])
-        menu_items = self.q(css=menu_selector + ' a').results
+        # Since we click now, updating to click
+        # click = ActionChains(self.browser).move_to_element(button_selector)
+        # click.click()
+        self.q(css=button_selector).click()
+
+        # Button no longer contains '...' and the markup is different.
+        # Commenting out for now; need to update or remove.
+
+        # if '...' not in self.q(css=button_selector).text[0]:
+        #     return False
+
+        menu_selector = self.get_element_selector(VIDEO_MENUS['download_transcript']) # .video-tracks .dropdown-menu
+
+        # Need to ensure the menu_selector is visible
+        self.wait_for_element_visibility(menu_selector, 'Menu is visible')
+
+        menu_items = self.q(css=menu_selector + ' a.action').results
         for item in menu_items:
             if item.get_attribute('data-value') == transcript_format:
                 item.click()
@@ -589,11 +606,14 @@ class VideoPage(PageObject):
 
         self.browser.execute_script("window.scrollTo(0, 0);")
 
-        if self.q(css=menu_selector + ' .active a').attrs('data-value')[0] != transcript_format:
+        if self.q(css=menu_selector + ' .is-active a.action').attrs('data-value')[0] != transcript_format:
             return False
 
-        if '.' + transcript_format not in self.q(css=button_selector).text[0]:
-            return False
+        # This is fragile and no longer matches up to the markup; the above check should be enough
+        # Commenting out for now; need to update or remove.
+
+        # if '.' + transcript_format not in self.q(css=button_selector).text[0]:
+        #     return False
 
         return True
 

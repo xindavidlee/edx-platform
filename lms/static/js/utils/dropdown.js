@@ -9,7 +9,7 @@ var edx = edx || {},
                 midpoint: ($(window).width() / 2),
                 button: $('.button-more.has-dropdown'),
                 button_active: 'is-active',
-                menu: $('.dropdown'),
+                menu: $('.dropdown-menu'),
                 menu_inactive: 'is-hidden',
                 menu_active: 'is-visible',
                 menu_align: 'align-',
@@ -19,12 +19,15 @@ var edx = edx || {},
             init: function(parent) {
                 var that = _dropdown;
 
-                if (parent) {
-                    that.opts.page = $(parent);
-                }
+                if (that.opts.button.length && that.opts.menu.length) {
 
-                _dropdown.listenForClick();
-                _dropdown.listenForKeypress();
+                    if (parent) {
+                        that.opts.page = $(parent);
+                    }
+
+                    _dropdown.listenForClick();
+                    _dropdown.listenForKeypress();
+                }
             },
 
             listenForClick: function() {
@@ -89,7 +92,7 @@ var edx = edx || {},
                                 that.closeDropdownMenus();
                                 break;
                         }
-                    } else if (focused.is('.dropdown')) {
+                    } else if (focused.is('.dropdown-menu')) {
 
                         menu = focused.parent().parent();
 
