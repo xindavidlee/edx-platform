@@ -1,3 +1,5 @@
+// Jasmine Test Suite: Certifiate Model
+
 define(['js/certificates/models/certificate'],
     function(CertificateModel) {
     'use strict';

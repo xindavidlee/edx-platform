@@ -1,12 +1,9 @@
-/**
- * This class defines a list view for course certificates.
- * It is expected to be backed by a CertificatesCollection.
- */
+// Backbone Application View: Certificates List
+
 define([
     'js/views/list', 'js/certificates/views/certificate_item', 'gettext'
 ], function(ListView, CertificateItemView, gettext) {
     'use strict';
-    console.log('certificates_list.start');
     var CertificatesListView = ListView.extend({
         tagName: 'div',
         className: 'certificates-list',
@@ -15,18 +12,13 @@ define([
         // Translators: this refers to a collection of certificates.
         itemCategoryDisplayName: gettext('certificate'),
 
+        // Translators: This line refers to the initial state of the form when no data has been inserted
         emptyMessage: gettext('You have not created any certificates yet.'),
 
         createItemView: function(options) {
-            console.log('certificates_list.createItemView');
+            // Returns either an editor view or a details view, depending on context
             return new CertificateItemView(options);
         }
-
-
     });
-
-    console.log('certificates_list.CertificatesListView');
-    console.log(CertificatesListView);
-    console.log('certificates_list.return');
     return CertificatesListView;
 });

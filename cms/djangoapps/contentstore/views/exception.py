@@ -1,11 +1,13 @@
 """
-Exceptions are handling in separate file.
+A common module for managing exceptions. Helps to avoid circular references
 """
-# pylint: disable=missing-docstring
 
 
-#Exceptions for the certificate app
+# Certificates Exceptions
 class CertificateException(Exception):
+    """
+    Base exception for Certificates workflows
+    """
     pass
 
 

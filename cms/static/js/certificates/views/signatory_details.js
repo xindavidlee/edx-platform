@@ -1,12 +1,11 @@
-/**
- * This class defines a details view for signatories of certificate.
- */
+// Backbone Application View:  Signatory Details
+
+
 define([
     'js/views/baseview', 'js/views/utils/view_utils', 'js/certificates/views/signatory_editor', 'underscore', "js/utils/templates", 'gettext', 'underscore.string'
 ],
 function(BaseView, ViewUtils, SignatoryEditorView, _, TemplateUtils, gettext, str) {
     'use strict';
-    console.log('signatory_details.start');
     var SignatoryDetailsView = BaseView.extend({
         tagName: 'div',
         events: {
@@ -17,9 +16,8 @@ function(BaseView, ViewUtils, SignatoryEditorView, _, TemplateUtils, gettext, st
         },
 
         className: function () {
-            console.log('signatory_details.className');
+            // Determine the CSS class names for this model instance
             var index = this.model.collection.indexOf(this.model);
-
             return [
                 'signatory-details',
                 'signatory-details-view-' + index
@@ -27,30 +25,28 @@ function(BaseView, ViewUtils, SignatoryEditorView, _, TemplateUtils, gettext, st
         },
 
         initialize: function() {
-            console.log('signatory_details.initialize');
+            // Set up the initial state of the attributes set for this model instance
             this.template = this.loadTemplate('signatory-details');
             this.listenTo(this.model, 'change', this.render);
         },
 
         loadTemplate: function(name) {
+            // Retrieve the corresponding template for this model
             return TemplateUtils.loadTemplate(name);
         },
 
         editSignatory: function(event) {
-            console.log('signatory_details.editSignatory');
+            // Retrieve the edit view for this model
             if (event && event.preventDefault) { event.preventDefault(); }
             var view =  new SignatoryEditorView({model: this.model, isEditingAllCollections: false});
             this.$el.html(view.render());
         },
 
         saveSignatoryData: function(event) {
+            // Persist the data for this model
             if (event && event.preventDefault) { event.preventDefault(); }
-
-            // relational model contains the reverse relation to parent.
-            // getting certificate object here.
             var certificate = this.model.get('certificate');
             var self = this;
-
             ViewUtils.runOperationShowingMessage(
                 gettext('Saving'),
                 function () {
@@ -63,30 +59,23 @@ function(BaseView, ViewUtils, SignatoryEditorView, _, TemplateUtils, gettext, st
                             self.closeSignatoryEditView();
                         }.bind(this)
                     });
-
                     return dfd;
                 }.bind(this));
-
         },
 
         closeSignatoryEditView: function(event) {
+            // Enable the cancellation workflow for the editing view
             if (event && event.preventDefault) { event.preventDefault(); }
             this.render();
         },
 
         render: function() {
-            console.log('signatory_details.render');
+            // Assemble the detail view for this model
             var attributes = $.extend({}, this.model.attributes, {
                 signatory_number: this.model.collection.indexOf(this.model) + 1
             });
-
             return $(this.el).html(this.template(attributes));
         }
-
     });
-
-    console.log('signatory_details.SignatoryDetailsView');
-    console.log(SignatoryDetailsView);
-    console.log('signatory_details.return');
     return SignatoryDetailsView;
 });

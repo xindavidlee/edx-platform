@@ -1,24 +1,26 @@
+// Jasmine Test Suite: Certifiate Page View
+
 define([
-    'jquery', 'underscore', 'js/views/pages/group_configurations',
-    'js/models/group_configuration', 'js/collections/group_configuration',
+    'jquery', 'underscore', 'js/certificates/views/certificates_page',
+    'js/certificates/models/certificate', 'js/certificates/collections/certificates',
     'js/common_helpers/template_helpers'
-], function ($, _, GroupConfigurationsPage, GroupConfigurationModel, GroupConfigurationCollection, TemplateHelpers) {
+], function ($, _, CertificatesPage, CertificateModel, CertificateCollection, TemplateHelpers) {
     'use strict';
-    describe('GroupConfigurationsPage', function() {
-        var mockGroupConfigurationsPage = readFixtures(
-                'mock/mock-group-configuration-page.underscore'
+    describe('CertificatesPage', function() {
+        var mockCertificatesPage = readFixtures(
+                'mock/mock-certificate-page.underscore'
             ),
-            groupConfigItemClassName = '.group-configurations-list-item';
+            certificateItemClassName = '.certificates-list-item';
 
         var initializePage = function (disableSpy) {
-            var view = new GroupConfigurationsPage({
+            var view = new CertificatesPage({
                 el: $('#content'),
-                experimentsEnabled: true,
-                experimentGroupConfigurations: new GroupConfigurationCollection({
+                certificatesEnabled: true,
+                certificates: new CertificateCollection({
                     id: 0,
-                    name: 'Configuration 1'
+                    name: 'Certificate 1'
                 }),
-                contentGroupConfiguration: new GroupConfigurationModel({groups: []})
+                certificate: new CertificateModel({signatories: []})
             });
 
             if (!disableSpy) {
@@ -33,15 +35,15 @@ define([
         };
 
         beforeEach(function () {
-            setFixtures(mockGroupConfigurationsPage);
+            setFixtures(mockCertificatesPage);
             TemplateHelpers.installTemplates([
-                'group-configuration-editor', 'group-configuration-details', 'content-group-details',
-                'content-group-editor', 'group-edit', 'list'
+                'certificate-editor', 'certificate-details', 'signatory-details',
+                'signatory-editor', 'list'
             ]);
 
             this.addMatchers({
                 toBeExpanded: function () {
-                    return Boolean($('a.group-toggle.hide-groups', $(this.actual)).length);
+                    return Boolean($('a.signatory-toggle.hide-signatories', $(this.actual)).length);
                 }
             });
         });
@@ -51,16 +53,16 @@ define([
                 var view = initializePage();
                 expect(view.$('.ui-loading')).toBeVisible();
                 view.render();
-                expect(view.$(groupConfigItemClassName)).toExist();
-                expect(view.$('.content-groups .no-content')).toExist();
+                expect(view.$(certificateItemClassName)).toExist();
+                expect(view.$('.signatories .no-content')).toExist();
                 expect(view.$('.ui-loading')).toHaveClass('is-hidden');
             });
         });
 
-        describe('Experiment group configurations', function() {
+        describe('Certificates', function() {
             beforeEach(function () {
                 spyOn($.fn, 'focus');
-                TemplateHelpers.installTemplate('group-configuration-details');
+                TemplateHelpers.installTemplate('certificate-details');
                 this.view = initializePage(true);
             });
 
@@ -69,30 +71,30 @@ define([
                 this.view.render();
                 // We cannot use .toBeFocused due to flakiness.
                 expect($.fn.focus).toHaveBeenCalled();
-                expect(this.view.$(groupConfigItemClassName)).toBeExpanded();
+                expect(this.view.$(certificateItemClassName)).toBeExpanded();
             });
 
-            it('should not focus on any experiment configuration if url hash is empty', function() {
+            it('should not focus on any certificate if url hash is empty', function() {
                 spyOn(this.view, 'getLocationHash').andReturn('');
                 this.view.render();
                 expect($.fn.focus).not.toHaveBeenCalled();
-                expect(this.view.$(groupConfigItemClassName)).not.toBeExpanded();
+                expect(this.view.$(certificateItemClassName)).not.toBeExpanded();
             });
 
-            it('should not focus on any experiment configuration if url hash contains wrong id', function() {
+            it('should not focus on any certificate if url hash contains wrong id', function() {
                 spyOn(this.view, 'getLocationHash').andReturn('#1');
                 this.view.render();
                 expect($.fn.focus).not.toHaveBeenCalled();
-                expect(this.view.$(groupConfigItemClassName)).not.toBeExpanded();
+                expect(this.view.$(certificateItemClassName)).not.toBeExpanded();
             });
 
-            it('should not show a notification message if an experiment configuration is not changed', function () {
+            it('should not show a notification message if a certificate is not changed', function () {
                 this.view.render();
                 expect(this.view.onBeforeUnload()).toBeUndefined();
             });
 
-            it('should show a notification message if an experiment configuration is changed', function () {
-                this.view.experimentGroupConfigurations.at(0).set('name', 'Configuration 2');
+            it('should show a notification message if a certificate is changed', function () {
+                this.view.certificates.at(0).set('name', 'Certificate 2');
                 expect(this.view.onBeforeUnload())
                     .toBe('You have unsaved changes. Do you really want to leave this page?');
             });

@@ -1,3 +1,5 @@
+// Jasmine Test Suite: Certifiate Item View
+
 define([
     'underscore', 'js/models/course',
     'js/certificates/collections/certificates',
@@ -16,6 +18,7 @@ define([
     Notification, AjaxHelpers, TemplateHelpers, ViewHelpers, ValidationHelpers
 ) {
     'use strict';
+
     var SELECTORS = {
         detailsView: '.certificate-details',
         editView: '.certificate-edit',
@@ -30,7 +33,6 @@ define([
         note: '.wrapper-delete-button'
     };
 
-
     beforeEach(function() {
         window.course = new Course({
             id: '5',
@@ -42,6 +44,7 @@ define([
         });
 
         this.addMatchers({
+
             toContainText: function(text) {
                 var trimmedText = $.trim(this.actual.text());
 
@@ -51,6 +54,7 @@ define([
                     return trimmedText.indexOf(text) !== -1;
                 }
             },
+
             toBeCorrectValuesInInputs: function (values) {
                 var expected = {
                     name: this.actual.$(SELECTORS.inputName).val(),
@@ -60,16 +64,17 @@ define([
 
                 return _.isEqual(values, expected);
             },
+
             toBeCorrectValuesInModel: function (values) {
                 return _.every(values, function (value, key) {
                     return this.actual.get(key) === value;
                 }.bind(this));
             },
+
             toHaveDefaultNames: function (values) {
                 var actualValues = $.map(this.actual, function (item) {
                     return $(item).val();
                 });
-
                 return _.isEqual(actualValues, values);
             }
         });

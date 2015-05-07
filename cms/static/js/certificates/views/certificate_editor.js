@@ -1,11 +1,8 @@
-/**
- * This class defines an editing view for course certificates.
- * It is expected to be backed by a Certificate model.
- */
+// Backbone Application View: Certificate Editor
+
 define(['js/views/list_item_editor', 'js/certificates/models/signatory', 'js/certificates/views/signatory_editor', 'underscore', 'jquery', 'gettext'],
 function(ListItemEditorView, Signatory, SignatoryEditor, _, $, gettext) {
     'use strict';
-    console.log('certificate_editor.start');
     var MIN_SIGNATORIES_LIMIT = 1;
     var MAX_SIGNATORIES_LIMIT = 4;
     var CertificateEditorView = ListItemEditorView.extend({
@@ -21,7 +18,7 @@ function(ListItemEditorView, Signatory, SignatoryEditor, _, $, gettext) {
         },
 
         className: function () {
-            console.log('certificate_editor.className');
+            // Determine the CSS class names for this model instance
             var index = this.model.collection.indexOf(this.model);
 
             return [
@@ -33,29 +30,25 @@ function(ListItemEditorView, Signatory, SignatoryEditor, _, $, gettext) {
         },
 
         initialize: function() {
-            console.log('certificate_editor.initialize');
+            // Set up the initial state of the attributes set for this model instance
             _.bindAll(this, "onSignatoryRemoved");
             this.eventAgg = _.extend({}, Backbone.Events);
             this.eventAgg.bind("onSignatoryRemoved", this.onSignatoryRemoved);
             ListItemEditorView.prototype.initialize.call(this);
-
             this.template = this.loadTemplate('certificate-editor');
         },
 
-        /**
-         * Callback on signatory model destroyed/removed.
-         * @param model
-         */
         onSignatoryRemoved: function(model) {
+            // Event handler for model deletions
             this.model.setOriginalAttributes();
             this.render();
         },
 
         render: function() {
-            console.log('certificate_edit.render');
+            // Assemble the editor view for this model
             ListItemEditorView.prototype.render.call(this);
             var self = this;
-            // At-least one signatory would be associated with certificate.
+            // Ensure we have at least one signatory associated with the certificate.
             this.model.get("signatories").each(function( modelSignatory) {
                 var signatory_view = new SignatoryEditor({
                     model: modelSignatory,
@@ -64,19 +57,18 @@ function(ListItemEditorView, Signatory, SignatoryEditor, _, $, gettext) {
                 });
                 self.$('div.signatory-edit-list').append($(signatory_view.render()));
             });
-
             this.toggleAddSignatoryButtonState();
             return this;
         },
 
         addSignatory: function() {
-            // create a new signatory
+            // Append a new signatory to the certificate model's signatories collection
             var signatory = new Signatory({certificate: this.getSaveableModel()});
             this.render();
         },
 
         toggleAddSignatoryButtonState: function() {
-            // disable the 'add signatory' link if user has added up to 4 signatories.
+            // Disable the 'Add Signatory' link if the constraint has been met.
             if(this.$(".signatory-edit-list > div.signatory-edit").length >= MAX_SIGNATORIES_LIMIT) {
                 this.$(".action-add-signatory").addClass("disableClick");
             }
@@ -86,7 +78,7 @@ function(ListItemEditorView, Signatory, SignatoryEditor, _, $, gettext) {
         },
 
         getTemplateOptions: function() {
-            console.log('certificate_edit.getTemplateOptions');
+            // Retrieves the current attributes/options for the model
             return {
                 id: this.model.get('id'),
                 uniqueId: _.uniqueId(),
@@ -97,12 +89,12 @@ function(ListItemEditorView, Signatory, SignatoryEditor, _, $, gettext) {
         },
 
         getSaveableModel: function() {
-            console.log('certificate_edit.getSaveableModel');
+            // Returns the current model instance
             return this.model;
         },
 
         setName: function(event) {
-            console.log('certificate_edit.setName');
+            // Updates the indicated model field (still requires persistence on server)
             if (event && event.preventDefault) { event.preventDefault(); }
             this.model.set(
                 'name', this.$('.collection-name-input').val(),
@@ -111,7 +103,7 @@ function(ListItemEditorView, Signatory, SignatoryEditor, _, $, gettext) {
         },
 
         setDescription: function(event) {
-            console.log('certificate_edit.setDescription');
+            // Updates the indicated model field (still requires persistence on server)
             if (event && event.preventDefault) { event.preventDefault(); }
             this.model.set(
                 'description',
@@ -121,17 +113,11 @@ function(ListItemEditorView, Signatory, SignatoryEditor, _, $, gettext) {
         },
 
         setValues: function() {
-            console.log('certificate_edit.setValues');
+            // Update the specified values in the local model instance
             this.setName();
             this.setDescription();
-
             return this;
         }
-
     });
-
-    console.log('certificate_editor.CertificateEditorView');
-    console.log(CertificateEditorView);
-    console.log('certificate_editor.return');
     return CertificateEditorView;
 });

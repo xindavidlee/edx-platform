@@ -1,35 +1,34 @@
+// Backbone.js Application Model: Certificate Signatory
+
 define([
     'backbone', 'underscore', 'underscore.string', 'gettext', 'backbone-relational'
 ],
 function(Backbone, _, str) {
     'use strict';
-    console.log('signatory_relational_model.start');
     _.str = str;
 
     var Signatory = Backbone.RelationalModel.extend({
         idAttribute: "id",
         defaults: {
-            name: 'Signatory name',
-            title: 'Signatory title'
+            name: 'Signatory Name',
+            title: 'Signatory Title'
         },
 
         initialize: function(attributes, options) {
-            console.log('signatory_model.initialize');
+            // Set up the initial state of the attributes set for this model instance
             this.setOriginalAttributes();
             return this;
         },
+
         parse: function (response) {
-            console.log(response.id + " got parse called!");
+            // Parse must be defined for the model, but does not need to do anything special right now
             return response;
         },
 
         setOriginalAttributes: function() {
-            console.log('signatory_model.setOriginalAttributes');
+            // Remember the current state of this model (enables edit->cancel use cases)
             this._originalAttributes = this.parse(this.toJSON());
         }
     });
-
-    console.log('signatory_relational_model');
-    console.log(Signatory)
     return Signatory;
 });

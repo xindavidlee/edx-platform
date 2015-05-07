@@ -1,3 +1,5 @@
+// Jasmine Test Suite: Certifiate Details View
+
 define([
     'underscore', 'js/models/course',
     'js/certificates/collections/certificates',
@@ -12,6 +14,7 @@ define([
     Notification, AjaxHelpers, TemplateHelpers, ViewHelpers, ValidationHelpers, CustomMatchers
 ) {
     'use strict';
+
     var SELECTORS = {
         detailsView: '.certificate-details',
         editView: '.certificate-edit',
@@ -76,22 +79,21 @@ define([
 
         it('can edit certificate', function(){
             this.view.$('.edit').click();
-            // model should be in edit mode.
+            // The Certificate Model should be in 'edit' mode
             expect(this.model.get('editing')).toBe(true);
         });
 
         it('show certificate details', function(){
             this.view.$('.show-details').click();
 
-            // certificate detail e.g. Description should be visible.
-            expect(this.view.$(SELECTORS.description))
-                .toContainText('Test Description');
+            // The "Certificate Description" field should be visible.
+            expect(this.view.$(SELECTORS.description)).toContainText('Test Description');
         });
 
         it('hide certificate details', function(){
             this.view.$('.hide-details').click();
 
-            // certificate detail e.g. Description should be hidden.
+            // The "Certificate Description" field should be hidden.
             expect(this.view.$(SELECTORS.description)).not.toExist();
         });
     });

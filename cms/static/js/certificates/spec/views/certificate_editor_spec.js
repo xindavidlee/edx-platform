@@ -1,3 +1,5 @@
+// Jasmine Test Suite: Certifiate Editor View
+
 define([
     'underscore', 'js/models/course',
     'js/certificates/models/certificate',
@@ -12,6 +14,7 @@ define([
     Notification, AjaxHelpers, TemplateHelpers, ViewHelpers, ValidationHelpers, CustomMatchers
 ) {
     'use strict';
+
     var SELECTORS = {
         detailsView: '.certificate-details',
         editView: '.certificate-edit',
@@ -57,7 +60,6 @@ define([
     });
 
     describe('Experiment certificate editor view', function() {
-
         var setValuesToInputs = function (view, values) {
             _.each(values, function (value, selector) {
                 if (SELECTORS[selector]) {
@@ -120,6 +122,8 @@ define([
             });
 
             it('does not save on cancel', function() {
+                // When we cancel the action, the model values should be reverted to original state
+                // And the model should still be present in the collection
                 expect(this.view.$('.action-add'));
                 this.view.$('.action-add').click();
                 this.view.$(SELECTORS.inputCertificateName).val('New Certificate');
@@ -130,8 +134,6 @@ define([
                     name: 'Test Name',
                     description: 'Test Description'
                 })
-
-                // Model is still exist in the collection
                 expect(this.collection.length).toBe(1);
             });
         });

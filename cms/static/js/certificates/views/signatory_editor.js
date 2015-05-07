@@ -1,11 +1,8 @@
-/**
- * This class defines an editing view for course certificates.
- * It is expected to be backed by a Certificate model.
- */
+// Backbone Application View: Signatory Editor
+
 define(['js/views/utils/view_utils', "js/views/feedback_prompt", "js/views/feedback_notification", 'js/utils/templates', 'underscore', 'jquery', 'gettext'],
 function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) {
     'use strict';
-    console.log('certificate_editor.start');
     var SignatoryEditorView = Backbone.View.extend({
         tagName: 'div',
         events: {
@@ -15,9 +12,8 @@ function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) 
         },
 
         className: function () {
-            console.log('signatory_editor.className');
+            // Determine the CSS class names for this model instance
             var index = this.getModelIndex(this.model);
-
             return [
                 'signatory-edit',
                 'signatory-edit-view-' + index
@@ -25,6 +21,7 @@ function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) 
         },
 
         initialize: function(options) {
+            // Set up the initial state of the attributes set for this model instance
              _.bindAll(this, 'render');
             this.model.bind('change', this.render);
             this.eventAgg = options.eventAgg;
@@ -32,21 +29,18 @@ function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) 
             this.template = this.loadTemplate('signatory-editor');
         },
 
-        /**
-         * Get the model index/position in its collection.
-         */
         getModelIndex: function(givenModel) {
+            // Retrieve the position of this model in its collection
             return this.model.collection.indexOf(givenModel);
         },
 
         loadTemplate: function(name) {
+            // Retrieve the corresponding template for this model
             return TemplateUtils.loadTemplate(name);
         },
 
-        /**
-         * Get the count of signatories that are saved on server.
-         */
         getTotalSignatoriesOnServer: function() {
+            // Retrieve the count of signatories stored server-side
             var count = 0;
             this.model.collection.each(function( modelSignatory) {
                 if(!modelSignatory.isNew()) {
@@ -57,6 +51,7 @@ function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) 
         },
 
         render: function() {
+            // Assemble the editor view for this model
             var attributes = $.extend({}, this.model.attributes, {
                 signatory_number: this.getModelIndex(this.model) + 1,
                 signatories_count: this.model.collection.length,
@@ -69,6 +64,7 @@ function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) 
         },
 
         setSignatoryName: function(event) {
+            // Update the model with the provided data
             if (event && event.preventDefault) { event.preventDefault(); }
             this.model.set(
                 'name',
@@ -78,6 +74,7 @@ function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) 
         },
 
         setSignatoryTitle: function(event) {
+            // Update the model with the provided data
             if (event && event.preventDefault) { event.preventDefault(); }
             this.model.set(
                 'title',
@@ -86,13 +83,12 @@ function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) 
             );
         },
 
-
         deleteItem: function(event) {
+            // Remove the specified model from the collection
             if (event && event.preventDefault) { event.preventDefault(); }
             var certificate = this.model.get('certificate');
             var model = this.model;
             var self = this;
-
             var confirm = new PromptView.Warning({
                 title: gettext('Are you sure you want to delete this signatory with title "'+model.get('title') +'"?'),
                 message: gettext('This action cannot be undone.'),
@@ -131,9 +127,5 @@ function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) 
             confirm.show();
         }
     });
-
-    console.log('certificate_editor.CertificateEditorView');
-    console.log(SignatoryEditorView);
-    console.log('certificate_editor.return');
     return SignatoryEditorView;
 });
