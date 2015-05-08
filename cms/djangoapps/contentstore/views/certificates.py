@@ -23,9 +23,9 @@ import json
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django_future.csrf import ensure_csrf_cookie
 from django.http import HttpResponse
 from django.utils.translation import ugettext as _
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from contentstore.utils import reverse_course_url
@@ -82,7 +82,12 @@ class CertificateManager(object):
         """
         # Ensure the schema version meets our expectations
         if certificate_data.get("version") != CERTIFICATE_SCHEMA_VERSION:
-            raise TypeError("Certificate schema is an unexpected version {0}".format(certificate_data.get("version")))
+            raise TypeError(
+                "Unsupported certificate schema version: {0}.  Expected version: {1}.".format(
+                    certificate_data.get("version"),
+                    CERTIFICATE_SCHEMA_VERSION
+                )
+            )
         if not certificate_data.get("name"):
             raise CertificateValidationError(_("must have name of the certificate"))
 
@@ -93,7 +98,7 @@ class CertificateManager(object):
         """
         if not course.certificates or not course.certificates.get('certificates'):
             return []
-        return set([cert['id'] for cert in course.certificates['certificates']])
+        return [cert['id'] for cert in course.certificates['certificates']]
 
     @staticmethod
     def assign_id(course, certificate_data, certificate_id=None):
@@ -113,7 +118,7 @@ class CertificateManager(object):
             )
 
         for index, signatory in enumerate(certificate_data['signatories']):  # pylint: disable=unused-variable
-            if not signatory.get('id', False):
+            if signatory and not signatory.get('id', False):
                 signatory['id'] = generate_int_id(used_ids=used_ids)
             used_ids.append(signatory['id'])
 
@@ -246,9 +251,11 @@ def certificates_list_handler(request, course_key_string):
             certificate_url = reverse_course_url('certificates.certificates_list_handler', course_key)
             course_outline_url = reverse_course_url('course_handler', course_key)
             certificates = None
+            print 'VIEW SETTING: {}'.format(settings.FEATURES.get('CERTIFICATES_HTML_VIEW'))
             if settings.FEATURES.get('CERTIFICATES_HTML_VIEW', False):
                 certificates = CertificateManager.get_certificates(course)
 
+            print certificates
             return render_to_response('certificates.html', {
                 'context_course': course,
                 'certificate_url': certificate_url,
@@ -276,6 +283,8 @@ def certificates_list_handler(request, course_key_string):
                     kwargs={'certificate_id': new_certificate.id}  # pylint: disable=no-member
                 )
                 store.update_item(course, request.user.id)
+                course = _get_course_and_check_access(course_key, request.user)
+                print course.certificates['certificates']
                 return response
         else:
             return HttpResponse(status=406)

@@ -4,6 +4,8 @@
 Group Configuration Tests.
 """
 import json
+import mock
+
 from contentstore.utils import reverse_course_url
 from contentstore.views.certificates import CERTIFICATE_SCHEMA_VERSION
 from contentstore.tests.utils import CourseTestCase
@@ -14,6 +16,13 @@ CERTIFICATE_JSON = {
     u'name': u'Test certificate',
     u'description': u'Test description',
     u'version': CERTIFICATE_SCHEMA_VERSION
+}
+
+CERTIFICATE_JSON_WITH_SIGNATORIES = {
+    u'name': u'Test certificate',
+    u'description': u'Test description',
+    u'version': CERTIFICATE_SCHEMA_VERSION,
+    u'signatories': [{"name": "Bob Smith", "title": "The DEAN."}]
 }
 
 
@@ -125,7 +134,7 @@ class CertificatesBaseTestCase(object):
         with self.assertRaises(Exception) as context:
             CertificateManager.validate(json_data_1)
 
-        self.assertTrue('Certificate dict has unexpected version 100' in context.exception)
+        self.assertTrue("Unsupported certificate schema version: 100.  Expected version: 1." in context.exception)
 
         #Test certificate name is missing
         json_data_2 = {
@@ -177,19 +186,21 @@ class CertificatesListHandlerTestCase(CourseTestCase, CertificatesBaseTestCase, 
         self._remove_ids(content)  # pylint: disable=unused-variable
         self.assertEqual(content, expected)
 
+    @mock.patch.dict('django.conf.settings.FEATURES', {'CERTIFICATES_HTML_VIEW': True})
     def test_certificate_info_in_response(self):
         """
         Test that certificate has been created and rendered properly.
         """
         response = self.client.ajax_post(
             self._url(),
-            data=CERTIFICATE_JSON
+            data=CERTIFICATE_JSON_WITH_SIGNATORIES
         )
 
         self.assertEqual(response.status_code, 201)
 
         # in html response
         result = self.client.get_html(self._url())
+        print self._url()
         self.assertIn('Test certificate', result.content)
         self.assertIn('Test description', result.content)
 

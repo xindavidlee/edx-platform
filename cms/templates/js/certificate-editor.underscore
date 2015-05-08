@@ -1,4 +1,3 @@
-<% console.log("certificate-editor.underscore.start") %>
 <form class="collection-edit-form certificate-edit-form">
     <% if (error && error.message) { %>
         <div class="certificate-edit-error message message-status message-status error is-shown" name="certificate-edit-error">
@@ -44,4 +43,3 @@
         <% } %>
     </div>
 </form>
-<% console.log("certificate-editor.underscore.start") %>

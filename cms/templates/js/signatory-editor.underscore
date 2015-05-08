@@ -1,4 +1,3 @@
-<% console.log("signatory-editor.underscore.start") %>
      <div class="signatory-panel-default">
 
        <% if (!is_editing_all_collections) { %>
@@ -32,4 +31,3 @@
          </fieldset>
        </div>
      </div>
-<% console.log("signatory-editor.underscore.start") %>

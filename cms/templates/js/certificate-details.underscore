@@ -1,4 +1,3 @@
-<% console.log("certificate-details.underscore.start") %>
 <div class="collection-details wrapper-certificate">
     <header class="collection-header">
         <h3 class="title">
@@ -39,4 +38,3 @@
         </li>
     </ul>
 </div>
-<% console.log("certificate-details.underscore.end") %>
