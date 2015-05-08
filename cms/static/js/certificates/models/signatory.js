@@ -11,7 +11,8 @@ function(Backbone, _, str) {
         idAttribute: "id",
         defaults: {
             name: 'Signatory Name',
-            title: 'Signatory Title'
+            title: 'Signatory Title',
+            signature_image_path: ''
         },
 
         initialize: function(attributes, options) {

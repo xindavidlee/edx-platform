@@ -1,14 +1,17 @@
 // Backbone Application View: Signatory Editor
 
-define(['js/views/utils/view_utils', "js/views/feedback_prompt", "js/views/feedback_notification", 'js/utils/templates', 'underscore', 'jquery', 'gettext'],
-function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) {
+define(['js/views/utils/view_utils', "js/views/feedback_prompt", "js/views/feedback_notification", "js/models/uploads",
+    "js/views/uploads", 'js/utils/templates', 'underscore', 'jquery', 'gettext'],
+function(ViewUtils, PromptView, NotificationView, FileUploadModel, FileUploadDialog, TemplateUtils, _, $, gettext) {
     'use strict';
     var SignatoryEditorView = Backbone.View.extend({
         tagName: 'div',
         events: {
             'change .signatory-name-input': 'setSignatoryName',
             'change .signatory-title-input': 'setSignatoryTitle',
-            'click  .signatory-panel-delete': 'deleteItem'
+            'change .signatory-signature-inputt': 'setSignatorySignatureImagePath',
+            'click .signatory-panel-delete': 'deleteItem',
+            'click .action-upload-signature': 'uploadSignatureImage'
         },
 
         className: function () {
@@ -83,6 +86,16 @@ function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) 
             );
         },
 
+        setSignatorySignatureImagePath: function(event) {
+            // #TODO should have a single method for setting these fields.
+            if (event && event.preventDefault) { event.preventDefault(); }
+            this.model.set(
+                'signature_image_path',
+                this.$('.signatory-signature-input').val(),
+                { silent: true }
+            );
+        },
+
         deleteItem: function(event) {
             // Remove the specified model from the collection
             if (event && event.preventDefault) { event.preventDefault(); }
@@ -105,6 +118,16 @@ function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) 
                             }
                             else {
                                 deleting.show();
+                                // delete signature image
+                                $.ajax({
+                                    url: CMS.URL.UPLOAD_ASSET + model.get('signature_image_path'),
+                                    type: 'DELETE',
+                                    dataType: 'json',
+                                    contentType: 'application/json',
+                                    data: {},
+                                    success: function (data) {}
+                                });
+
                                 model.destroy({
                                     wait: true,
                                     success: function (model, response) {
@@ -125,6 +148,23 @@ function(ViewUtils, PromptView, NotificationView, TemplateUtils, _, $, gettext) 
                 }
             });
             confirm.show();
+        },
+
+        uploadSignatureImage: function(event) {
+            event.preventDefault();
+            var upload = new FileUploadModel({
+                title: gettext("Upload your signature image."),
+                message: gettext("Image must be 450px X 150px transparent PNG."),
+                mimeTypes: ['image/png']
+            });
+            var self = this;
+            var modal = new FileUploadDialog({
+                model: upload,
+                onSuccess: function(response) {
+                    self.model.set('signature_image_path', response.asset.url);
+                }
+            });
+            modal.show();
         }
     });
     return SignatoryEditorView;

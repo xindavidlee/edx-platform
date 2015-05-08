@@ -250,6 +250,7 @@ def certificates_list_handler(request, course_key_string):
         if 'text/html' in request.META.get('HTTP_ACCEPT', 'text/html'):
             certificate_url = reverse_course_url('certificates.certificates_list_handler', course_key)
             course_outline_url = reverse_course_url('course_handler', course_key)
+            upload_asset_url = reverse_course_url('assets_handler', course_key)
             certificates = None
             print 'VIEW SETTING: {}'.format(settings.FEATURES.get('CERTIFICATES_HTML_VIEW'))
             if settings.FEATURES.get('CERTIFICATES_HTML_VIEW', False):
@@ -260,6 +261,7 @@ def certificates_list_handler(request, course_key_string):
                 'context_course': course,
                 'certificate_url': certificate_url,
                 'course_outline_url': course_outline_url,
+                'upload_asset_url': upload_asset_url,
                 'certificates': json.dumps(certificates),
             })
         elif "application/json" in request.META.get('HTTP_ACCEPT'):
