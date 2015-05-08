@@ -6,9 +6,13 @@ Group Configuration Tests.
 import json
 import mock
 
+from opaque_keys.edx.keys import AssetKey
+
 from contentstore.utils import reverse_course_url
 from contentstore.views.certificates import CERTIFICATE_SCHEMA_VERSION
 from contentstore.tests.utils import CourseTestCase
+from xmodule.contentstore.django import contentstore
+from xmodule.contentstore.content import StaticContent
 from student.models import CourseEnrollment
 from contentstore.views.certificates import CertificateManager
 
@@ -22,7 +26,13 @@ CERTIFICATE_JSON_WITH_SIGNATORIES = {
     u'name': u'Test certificate',
     u'description': u'Test description',
     u'version': CERTIFICATE_SCHEMA_VERSION,
-    u'signatories': [{"name": "Bob Smith", "title": "The DEAN."}]
+    u'signatories': [
+        {
+            "name": "Bob Smith",
+            "title": "The DEAN.",
+            "signature_image_path": "/c4x/test/CSS101/asset/Signature.png"
+        }
+    ]
 }
 
 
@@ -31,6 +41,17 @@ class HelperMethods(object):
     """
     Mixin that provides useful methods for certificate configuration tests.
     """
+    def _create_fake_signature_images(self, asset_keys):
+        """
+        Creates fake image files for a list of asset_keys.
+        """
+        for asset_key_string in asset_keys:
+            asset_key = AssetKey.from_string(asset_key_string)
+            content = StaticContent(
+                asset_key, "Fake asset", "image/png", "data",
+            )
+            contentstore().save(content)
+
     def _add_course_certificates(self, count=1, signatory_count=0):
         """
         Create certificate for the course.
@@ -39,10 +60,12 @@ class HelperMethods(object):
             {
                 'name': 'Name ' + str(i),
                 'title': 'Title ' + str(i),
+                'signature_image_path': '/c4x/test/CSS101/asset/Signature{}.png'.format(i),
                 'id': i
             } for i in xrange(0, signatory_count)
 
         ]
+        self._create_fake_signature_images([signatory['signature_image_path'] for signatory in signatories])
 
         certificates = [
             {

@@ -118,16 +118,6 @@ function(ViewUtils, PromptView, NotificationView, FileUploadModel, FileUploadDia
                             }
                             else {
                                 deleting.show();
-                                // delete signature image
-                                $.ajax({
-                                    url: CMS.URL.UPLOAD_ASSET + model.get('signature_image_path'),
-                                    type: 'DELETE',
-                                    dataType: 'json',
-                                    contentType: 'application/json',
-                                    data: {},
-                                    success: function (data) {}
-                                });
-
                                 model.destroy({
                                     wait: true,
                                     success: function (model, response) {
