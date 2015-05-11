@@ -268,7 +268,9 @@ class OLXFormatChecker(unittest.TestCase):
             self.assertIn(xml_to_check, block_contents)
         if xml_re_to_check:
             xml_re = re.compile(xml_re_to_check)
-            self.assertIsNotNone(xml_re.search(block_contents))
+            self.assertIsNotNone(
+                xml_re.search(block_contents),
+                msg='Block contents of:\n{}\n don\'t match regex of:\n{}'.format(block_contents, xml_re_to_check))
 
     def assertOLXMissing(self, block_type, block_id, **kwargs):
         course_export_dir = self._get_course_export_dir()
@@ -324,6 +326,64 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
                 self.export_dir,
             )
 
+    def _make_deprecated_block_key(self, course_key, block_type, block_id):
+        return r'i4x://{ORG}/{COURSE}/{BLOCK_TYPE}/{BLOCK_ID}'.format(
+            ORG=course_key.org,
+            COURSE=course_key.course,
+            BLOCK_TYPE=block_type,
+            BLOCK_ID=block_id,
+        )
+
+    def _make_block_key(self, course_key, block_type, block_id):
+        return r'block-v1:{ORG}\+{COURSE}\+{RUN}\+type@{BLOCK_TYPE}\+block@{BLOCK_ID}'.format(
+            ORG=course_key.org,
+            COURSE=course_key.course,
+            RUN=course_key.run,
+            BLOCK_TYPE=block_type,
+            BLOCK_ID=block_id,
+        )
+
+    def _make_block_matching_regex(self, course_key, draft, block_type, **kwargs):
+        block_regex = '<{}[\s]*'.format(block_type)
+        if draft:
+            parent_type = kwargs.pop('parent_type', None)
+            parent_id = kwargs.pop('parent_id', None)
+            child_list_idx = kwargs.pop('index_in_children_list', None)
+            self.assertIsNotNone(parent_type, msg="Parent block type must be passed for draft {} item!".format(block_type))
+            self.assertIsNotNone(parent_id, msg="Parent block id must be passed for draft {} item!".format(block_type))
+            self.assertIsNotNone(child_list_idx, msg="Index within {} must be passed for draft {} item!".format(parent_type, block_type))
+            # Add the sections expected in a draft item.
+            block_regex += '(parent_url="({DEPRECATED_PARENT_KEY}|{PARENT_KEY})"[\s]+)'.format(
+                DEPRECATED_PARENT_KEY=self._make_deprecated_block_key(course_key, parent_type, parent_id),
+                PARENT_KEY=self._make_block_key(course_key, parent_type, parent_id),
+            )
+            block_regex += '(index_in_children_list="{CHILD_LIST_IDX}")'.format(
+                CHILD_LIST_IDX=child_list_idx,
+            )
+        block_regex += '>[\s]*'
+        child_ids = kwargs.pop('child_ids', None)
+        if child_ids:
+            block_regex += '('
+            for child_id in child_ids:
+                block_regex += r'<{CHILD_TYPE} url_name="{CHILD_ID}"/>[\s]+'.format(
+                    CHILD_TYPE=child_id[0],
+                    CHILD_ID=child_id[1]
+                )
+            block_regex += ')'
+        block_regex += '(</{}>)'.format(block_type)
+        return block_regex
+
+    def _make_vertical_matching_regex(self, course_key, draft, **kwargs):
+        return self._make_block_matching_regex(course_key, draft, 'vertical', **kwargs)
+
+    def _make_html_unit_matching_regex(self, course_key, draft, **kwargs):
+        block_regex = '<html[\s]*'
+        filename = kwargs.pop('filename', None)
+        if filename:
+            block_regex += 'filename="{}"'.format(filename)
+        block_regex += '/>'
+        return block_regex
+
     def assertOLXContent(self, block_type, block_id, **kwargs):
         """
         Check that the course has been exported. If not, export it, then call the check.
@@ -376,35 +436,114 @@ class ElementalPublishingTests(UniversalTestProcedure):
                 self.publish(block_type, block_id)
 
     @ddt.data(*MODULESTORE_SETUPS)
-    def test_publish_vertical(self, modulestore_builder):
+    def test_publish_single_vertical(self, modulestore_builder):
         with self._setup_test(modulestore_builder, self.course_key) as (
             self.root_export_dir, self.contentstore, self.store, self.course
         ):
-            block_type = 'vertical'
-            block_id = 'vertical00'
-            parent_type = 'sequential'
-            parent_id = 'sequential00'
-            deprecated_parent_key = r'i4x://{ORG}/{COURSE}/{PARENT_TYPE}/{PARENT_ID}'.format(
-                ORG=self.course_key.org,
-                COURSE=self.course_key.course,
-                PARENT_TYPE=parent_type,
-                PARENT_ID=parent_id,
+            # Ensure that vertical00 is a draft in OLX.
+            vertical00_regex = self._make_vertical_matching_regex(
+                self.course_key,
+                draft=True,
+                parent_type='sequential',
+                parent_id='sequential00',
+                index_in_children_list=0,
+                child_ids=(('html', 'unit00'), ('html', 'unit01')),
             )
-            parent_key = r'block-v1:{ORG}\+{COURSE}\+{RUN}\+type@{PARENT_TYPE}\+block@{PARENT_ID}'.format(
-                ORG=self.course_key.org,
-                COURSE=self.course_key.course,
-                RUN=self.course_key.run,
-                PARENT_TYPE=parent_type,
-                PARENT_ID=parent_id,
+            self.assertOLXContent('vertical', 'vertical00', draft=True, xml_re=vertical00_regex)
+            self.assertOLXMissing('vertical', 'vertical00', draft=False)
+
+            # Ensure that unit00/unit01 are both drafts in OLX.
+            unit00_regex = self._make_html_unit_matching_regex(
+                self.course_key,
+                draft=True,
+                filename='unit00',
             )
-            VERTICAL_RE = """(<vertical parent_url="({DEPRECATED_PARENT_KEY}|{PARENT_KEY})"[\s]+)(index_in_children_list="0">[\s]+)(<html url_name="unit00"/>[\s]+<html url_name="unit01"/>[\s]+</vertical>)""".format(
-                DEPRECATED_PARENT_KEY=deprecated_parent_key,
-                PARENT_KEY=parent_key
+            self.assertOLXContent('html', 'unit00', draft=True, xml_re=unit00_regex)
+            self.assertOLXMissing('html', 'unit00', draft=False)
+            unit01_regex = self._make_html_unit_matching_regex(
+                self.course_key,
+                draft=True,
+                filename='unit01',
             )
-            self.assertOLXContent(block_type, block_id, draft=True, xml_re=VERTICAL_RE)
-            self.assertOLXMissing(block_type, block_id, draft=False)
-            self.publish(block_type, block_id)
-            self.assertOLXMissing(block_type, block_id, draft=True)
+            self.assertOLXContent('html', 'unit01', draft=True, xml_re=unit01_regex)
+            self.assertOLXMissing('html', 'unit01', draft=False)
 
+            self.publish('vertical', 'vertical00')
 
+            # Ensure that vertical00 is published in OLX.
+            vertical00_published_regex = self._make_vertical_matching_regex(
+                self.course_key,
+                draft=False,
+                child_ids=(('html', 'unit00'), ('html', 'unit01')),
+            )
+            self.assertOLXContent('vertical', 'vertical00', draft=False, xml_re=vertical00_published_regex)
+            self.assertOLXMissing('vertical', 'vertical00', draft=True)
 
+    @ddt.data(*MODULESTORE_SETUPS)
+    def test_publish_multiple_verticals(self, modulestore_builder):
+        with self._setup_test(modulestore_builder, self.course_key) as (
+            self.root_export_dir, self.contentstore, self.store, self.course
+        ):
+            # Ensure that vertical02 is not published.
+            vertical02_regex = self._make_vertical_matching_regex(
+                self.course_key,
+                draft=True,
+                parent_type='sequential',
+                parent_id='sequential01',
+                index_in_children_list=0,
+                child_ids=(('html', 'unit04'), ('html', 'unit05')),
+            )
+            self.assertOLXContent('vertical', 'vertical02', draft=True, xml_re=vertical02_regex)
+            self.assertOLXMissing('vertical', 'vertical02', draft=False)
+
+            # Ensure that vertical03 is not published.
+            vertical03_regex = self._make_vertical_matching_regex(
+                self.course_key,
+                draft=True,
+                parent_type='sequential',
+                parent_id='sequential01',
+                index_in_children_list=1,
+                child_ids=(('html', 'unit06'), ('html', 'unit07')),
+            )
+            self.assertOLXContent('vertical', 'vertical03', draft=True, xml_re=vertical03_regex)
+            self.assertOLXMissing('vertical', 'vertical03', draft=False)
+
+            # Ensure that vertical04 is not published.
+            vertical04_regex = self._make_vertical_matching_regex(
+                self.course_key,
+                draft=True,
+                parent_type='sequential',
+                parent_id='sequential02',
+                index_in_children_list=0,
+                child_ids=(('html', 'unit08'), ('html', 'unit09')),
+            )
+            self.assertOLXContent('vertical', 'vertical04', draft=True, xml_re=vertical04_regex)
+            self.assertOLXMissing('vertical', 'vertical04', draft=False)
+
+            ##########################################
+            # Publish both vertical03 and vertical 04.
+            self.publish('vertical', 'vertical03')
+            self.publish('vertical', 'vertical04')
+            ##########################################
+
+            # Ensure that vertical02 is *STILL* not published.
+            self.assertOLXContent('vertical', 'vertical02', draft=True, xml_re=vertical02_regex)
+            self.assertOLXMissing('vertical', 'vertical02', draft=False)
+
+            # Ensure that vertical03 is published.
+            vertical03_published_regex = self._make_vertical_matching_regex(
+                self.course_key,
+                draft=False,
+                child_ids=(('html', 'unit06'), ('html', 'unit07')),
+            )
+            self.assertOLXContent('vertical', 'vertical03', draft=False, xml_re=vertical03_published_regex)
+            self.assertOLXMissing('vertical', 'vertical03', draft=True)
+
+            # Ensure that vertical04 is published.
+            vertical04_published_regex = self._make_vertical_matching_regex(
+                self.course_key,
+                draft=False,
+                child_ids=(('html', 'unit08'), ('html', 'unit09')),
+            )
+            self.assertOLXContent('vertical', 'vertical04', draft=False, xml_re=vertical04_published_regex)
+            self.assertOLXMissing('vertical', 'vertical04', draft=True)
