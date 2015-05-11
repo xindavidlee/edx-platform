@@ -61,6 +61,10 @@ def _delete_asset(course_key, asset_key_string):
     remove asset by calling delete_asset method of assets module.
     """
     if asset_key_string:
+        # remove first slash in asset path
+        # otherwise it generates InvalidKeyError in case of split modulestore
+        if '/' == asset_key_string[0]:
+            asset_key_string = asset_key_string[1:]
         asset_key = AssetKey.from_string(asset_key_string)
         delete_asset(course_key, asset_key)
 

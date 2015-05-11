@@ -1,6 +1,8 @@
 """
 Course Certificates pages.
 """
+import os
+
 from bok_choy.promise import EmptyPromise
 from .course_page import CoursePage
 from .utils import confirm_prompt
@@ -289,9 +291,56 @@ class Signatory(object):
             'On signatory detail view'
         ).fulfill()
 
+    @staticmethod
+    def file_path(filename):
+        """
+        Construct file path to be uploaded from the data upload folder.
+
+        Arguments:
+            filename (str): asset filename
+
+        """
+        # Should grab common point between this page module and the data folder.
+        return os.sep.join(__file__.split(os.sep)[:-4]) + '/data/uploads/' + filename
+
+    def upload_signature_image(self, image_filename):
+        """
+        Opens upload image dialog and upload given image file.
+        """
+        self.find_css('.action-upload-signature').first.click()
+        EmptyPromise(
+            lambda: self.certificate.page.q(css='.assetupload-modal .upload-dialog').present,
+            'Signature image upload dialog opened'
+        ).fulfill()
+
+        asset_file_path = self.file_path(image_filename)
+        self.certificate.page.q(
+            css='.assetupload-modal .upload-dialog input[type="file"]'
+        )[0].send_keys(asset_file_path)
+
+        EmptyPromise(
+            lambda: not self.certificate.page.q(
+                css='.assetupload-modal a.action-upload.disabled'
+            ).present,
+            'Upload button is not disabled anymore'
+        ).fulfill()
+
+        self.certificate.page.q(css='.assetupload-modal a.action-upload').first.click()
+        EmptyPromise(
+            lambda: not self.certificate.page.q(css='.assetupload-modal .upload-dialog').visible,
+            'Upload dialog is removed after uploading image'
+        ).fulfill()
+
     @property
     def delete_icon_is_present(self):
         """
         Returns whether or not the delete icon is present.
         """
         return self.find_css('.signatory-panel-delete').present
+
+    @property
+    def signature_image_is_present(self):
+        """
+        Returns whether or not the signature image is present.
+        """
+        return self.find_css('.current-signature-image .signature-image').present

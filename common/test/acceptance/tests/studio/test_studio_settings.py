@@ -440,6 +440,8 @@ class CertificatesTest(StudioCourseTest):
         for idx, signatory in enumerate(signatories):
             certificate.signatories[idx].name = signatory['name']
             certificate.signatories[idx].title = signatory['title']
+            certificate.signatories[idx].upload_signature_image('Signature-{}.png'.format(idx))
+            self.assertTrue(certificate.signatories[idx].signature_image_is_present)
             added_signatories += 1
             if len(signatories) > added_signatories:
                 certificate.add_signatory()
