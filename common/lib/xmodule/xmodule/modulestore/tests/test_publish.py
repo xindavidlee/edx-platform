@@ -1,20 +1,14 @@
 """
 Test the publish code (mostly testing that publishing doesn't result in orphans)
 """
+import os
+import re
 import unittest
 import ddt
 import itertools
 from shutil import rmtree
 from tempfile import mkdtemp
 from nose.plugins.attrib import attr
-from nose.tools import (                        # pylint: disable=W0611,E0611
-    assert_true, assert_false,
-    assert_equals, assert_not_equals,
-    assert_is, assert_is_not,
-    assert_is_instance, assert_is_none,
-    assert_in, assert_not_in,
-    assert_raises, assert_raises_regexp,
-)
 from contextlib import contextmanager
 
 from opaque_keys.edx.locator import CourseLocator
@@ -161,26 +155,13 @@ class TestPublish(SplitWMongoCourseBootstrapper):
         self.assertTrue(self.draft_mongo.has_item(other_child_loc), "Oops, lost moved item")
 
 
-class MixedMongoModulestoreTest(object):
-    modulestore_builder = DRAFT_MODULESTORE_SETUP
-
-
-class MixedSplitModulestoreTest(object):
-    modulestore_builder = SPLIT_MODULESTORE_SETUP
-
-
-class DirectMongoModulestoreTest(object):
-    modulestore_builder = MongoModulestoreBuilder()
-
-
-class UniversalTestSetup(object):
+class UniversalTestSetup(unittest.TestCase):
     """
     This class exists to test XML import and export between different modulestore
     classes.
 
     Requires from subclasses:
-        self.modulestore - modulestore to be tested
-        self.course_key - course key of the test course
+        self.user_id - fake user_id
     """
 
     def _create_course(self, store, course_key):
@@ -189,65 +170,115 @@ class UniversalTestSetup(object):
         The course has two chapters (chapter_0 & chapter_1), each of which has two sequentials (seqential_0/1 & sequential_2/3),
         each of which has two verticals (vertical_0/1 - vertical_6/7), each of which has two units (unit_0/1 - unit_14/15).
         """
-        def _create_chapter(parent, block_id):
+        def _create_child(parent, block_type, block_id):
             return store.create_child(
-                self.user_id, parent.location, 'chapter', block_id=block_id
+                self.user_id, parent.location, block_type, block_id=block_id
             )
 
-        def _create_seq(parent, block_id):
-            return store.create_child(
-                self.user_id, parent.location, 'sequential', block_id=block_id
-            )
+        def _make_block_id(block_type, num):
+            return '{}{:02d}'.format(block_type, num)
 
-        def _create_vert(parent, block_id):
-            return store.create_child(
-                self.user_id, parent.location, 'vertical', block_id=block_id
-            )
+        # Create all the course items on the draft branch.
+        with store.branch_setting(ModuleStoreEnum.Branch.draft_preferred):
+            # Create course.
+            self.course = store.create_course(course_key.org, course_key.course, course_key.run, self.user_id)
 
-        def _create_unit(parent, block_id):
-            return store.create_child(
-                self.user_id, parent.location, 'html', block_id=block_id
-            )
+            # Create chapters.
+            block_type = 'chapter'
+            for idx in xrange(0, 2):
+                block_id = _make_block_id(block_type, idx)
+                setattr(self, block_id, _create_child(self.course, block_type, block_id))
 
-        # Create course.
-        self.course = store.create_course(course_key.org, course_key.course, course_key.run, self.user_id)
+            # Create sequentials.
+            block_type = 'sequential'
+            for idx in xrange(0, 4):
+                parent_item = getattr(self, _make_block_id('chapter', idx / 2))
+                block_id = _make_block_id(block_type, idx)
+                setattr(self, block_id, _create_child(parent_item, block_type, block_id))
 
-        # Create chapters.
-        for idx in xrange(0, 2):
-            setattr(self, 'chapter{}'.format(idx), _create_chapter(self.course, 'chapter_{}'.format(idx)))
+            # Create verticals.
+            block_type = 'vertical'
+            for idx in xrange(0, 8):
+                parent_item = getattr(self, _make_block_id('sequential', idx / 2))
+                block_id = _make_block_id(block_type, idx)
+                setattr(self, block_id, _create_child(parent_item, block_type, block_id))
 
-        # Create sequentials.
-        for idx in xrange(0, 4):
-            chapter_idx = idx / 2
-            setattr(self, 'seq{}'.format(idx), _create_seq(getattr(self, 'chapter{}'.format(chapter_idx)), 'sequential_{}'.format(idx)))
-
-        # Create verticals.
-        for idx in xrange(0, 8):
-            seq_idx = idx / 2
-            setattr(self, 'vertical{}'.format(idx), _create_vert(getattr(self, 'seq{}'.format(seq_idx)), 'vertical_{}'.format(idx)))
-
-        # Create units.
-        for idx in xrange(0, 16):
-            vert_idx = idx / 2
-            setattr(self, 'unit{}'.format(idx), _create_unit(getattr(self, 'vertical{}'.format(vert_idx)), 'unit_{}'.format(idx)))
+            # Create units.
+            block_type = 'unit'
+            for idx in xrange(0, 16):
+                parent_item = getattr(self, _make_block_id('vertical', idx / 2))
+                block_id = _make_block_id(block_type, idx)
+                setattr(self, block_id, _create_child(parent_item, 'html', block_id))
 
     def setUp(self):
         self.user_id = -3
         self.course_key = CourseLocator('test_org', 'test_course', 'test_run')
 
 
-@contextmanager
-def create_export_dir():
-    try:
-        export_dir = mkdtemp()
-        yield export_dir
-    finally:
-        rmtree(export_dir, ignore_errors=True)
+class OLXFormatChecker(unittest.TestCase):
+    """
+    Examines the on-disk course export to verify that specific items are present/missing
+    in the course export.
+    Currently assumes that the course is broken up into different subdirs.
 
+    Requires from subclasses:
+        self.root_export_dir - absolute root directory of course exports
+        self.export_dir - top-level course export directory name
+    """
+    unittest.TestCase.longMessage = True
 
-class OLXFormatChecker(object):
-    def check_olx_format(self, root_dir, course_dir, check_info):
-        pass
+    def _get_course_export_dir(self):
+        # Ensure that the course has been exported.
+        block_path = os.path.join(self.root_export_dir, self.export_dir)
+        self.assertTrue(
+            os.path.isdir(block_path),
+            msg='{} is not a dir.'.format(block_path)
+        )
+        return block_path
+
+    def _get_block_type_path(self, course_export_dir, block_type, draft):
+        # Form the path to the block type subdirectory, factoring in drafts.
+        block_path = course_export_dir
+        if draft:
+            block_path = os.path.join(block_path, 'drafts')
+        return os.path.join(block_path, block_type)
+
+    def _get_block_filename(self, block_type, block_id):
+        return '{}.xml'.format(block_id)
+
+    def _get_block_contents(self, block_subdir_path, block_type, block_id):
+        # Determine the filename containing the block info.
+        block_file = self._get_block_filename(block_type, block_id)
+        block_file_path = os.path.join(block_subdir_path, block_file)
+        self.assertTrue(
+            os.path.isfile(block_file_path),
+            msg='{} is not an existing file.'.format(block_file_path)
+        )
+        with open(block_file_path, "r") as fp:
+            return fp.read()
+
+    def assertOLXContent(self, block_type, block_id, **kwargs):
+        course_export_dir = self._get_course_export_dir()
+        is_draft = kwargs.pop('draft', False)
+        xml_to_check = kwargs.pop('xml', None)
+        xml_re_to_check = kwargs.pop('xml_re', None)
+        block_path = self._get_block_type_path(course_export_dir, block_type, is_draft)
+        block_contents = self._get_block_contents(block_path, block_type, block_id)
+        if xml_to_check:
+            self.assertIn(xml_to_check, block_contents)
+        if xml_re_to_check:
+            xml_re = re.compile(xml_re_to_check)
+            self.assertIsNotNone(xml_re.search(block_contents))
+
+    def assertOLXMissing(self, block_type, block_id, **kwargs):
+        course_export_dir = self._get_course_export_dir()
+        is_draft = kwargs.pop('draft', False)
+        block_path = self._get_block_type_path(course_export_dir, block_type, is_draft)
+        block_file_path = os.path.join(block_path, self._get_block_filename(block_type, block_id))
+        self.assertFalse(
+            os.path.exists(block_file_path),
+            msg='{} exists but should not!'.format(block_file_path)
+        )
 
 
 class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
@@ -255,112 +286,125 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
     EXPORTED_COURSE_BEFORE_DIR_NAME = 'exported_course_before'
     EXPORTED_COURSE_AFTER_DIR_NAME = 'exported_course_after'
 
-    def test_elemental_operation(self):
-        with create_export_dir() as export_dir:
+    def setUp(self):
+        super(UniversalTestProcedure, self).setUp()
+        self.export_dir = self.EXPORTED_COURSE_BEFORE_DIR_NAME
+
+    @contextmanager
+    def _create_export_dir(self):
+        try:
+            export_dir = mkdtemp()
+            yield export_dir
+        finally:
+            rmtree(export_dir, ignore_errors=True)
+
+    @contextmanager
+    def _setup_test(self, modulestore_builder, course_key):
+        with self._create_export_dir() as export_dir:
             # Construct the contentstore for storing the first import
             with MongoContentstoreBuilder().build() as test_content:
                 # Construct the modulestore for storing the first import (using the previously created contentstore)
-                with self.modulestore_builder.build(contentstore=test_content) as test_modulestore:
-
+                with modulestore_builder.build(contentstore=test_content) as test_modulestore:
                     # Create the course.
-                    self._create_course(test_modulestore, self.course_key)
+                    course = self._create_course(test_modulestore, course_key)
+                    yield export_dir, test_content, test_modulestore, course
 
-                    # Export the course.
-                    export_course_to_xml(
-                        test_modulestore,
-                        test_content,
-                        self.course_key,
-                        export_dir,
-                        self.EXPORTED_COURSE_BEFORE_DIR_NAME,
-                    )
-                    # Verify the export OLX format.
-                    self.check_olx_format(export_dir, self.EXPORTED_COURSE_BEFORE_DIR_NAME, self.olx_loc_and_fmt_before)
+    def _export_if_not_already(self):
+        """
+        Check that the course has been exported. If not, export it.
+        """
+        exported_course_path = os.path.join(self.root_export_dir, self.export_dir)
+        if not (os.path.exists(exported_course_path) and os.path.isdir(exported_course_path)):
+            # Export the course.
+            export_course_to_xml(
+                self.store,
+                self.contentstore,
+                self.course_key,
+                self.root_export_dir,
+                self.export_dir,
+            )
 
-                    # Get the specified test item.
-                    with test_modulestore.branch_setting(ModuleStoreEnum.Branch.draft_preferred):
-                        test_item = test_modulestore.get_item(self.course_key.make_usage_key(block_type=self.block_type, block_id=self.block_id))
+    def assertOLXContent(self, block_type, block_id, **kwargs):
+        """
+        Check that the course has been exported. If not, export it, then call the check.
+        """
+        self._export_if_not_already()
+        super(UniversalTestProcedure, self).assertOLXContent(block_type, block_id, **kwargs)
 
-                    # Perform an elemental operation on a particular item.
-                    assert_true(hasattr(test_modulestore, self.operation))
-                    elemental_op = getattr(test_modulestore, self.operation)
-                    op_params = []
-                    for p in self.operation_params:
-                        if isinstance(p, basestring):
-                            if p == '@location':
-                                op_params.append(test_item.location)
-                            elif p == '@user_id':
-                                op_params.append(self.user_id)
-                            else:
-                                op_params.append(p)
-                        else:
-                            op_params.append(p)
-                    elemental_op(*op_params)
+    def assertOLXMissing(self, block_type, block_id, **kwargs):
+        """
+        Check that the course has been exported. If not, export it, then call the check.
+        """
+        self._export_if_not_already()
+        super(UniversalTestProcedure, self).assertOLXMissing(block_type, block_id, **kwargs)
 
-                    # Export the course again.
-                    export_course_to_xml(
-                        test_modulestore,
-                        test_content,
-                        self.course_key,
-                        export_dir,
-                        self.EXPORTED_COURSE_AFTER_DIR_NAME,
-                    )
-                    # Verify the export OLX format.
-                    self.check_olx_format(export_dir, self.EXPORTED_COURSE_AFTER_DIR_NAME, self.olx_loc_and_fmt_after)
+    def publish(self, block_type, block_id):
+        # Get the specified test item from the draft branch.
+        with self.store.branch_setting(ModuleStoreEnum.Branch.draft_preferred):
+            test_item = self.store.get_item(self.course_key.make_usage_key(block_type=block_type, block_id=block_id))
+        # Publish the draft item to the published branch.
+        self.store.publish(test_item.location, self.user_id)
+        # Since the elemental operation is now complete, shift to the post-operation export directory name.
+        self.export_dir = self.EXPORTED_COURSE_AFTER_DIR_NAME
 
 
-class TestPublishSingleUnit(UniversalTestProcedure):
-    __test__ = False
-    block_type = 'html'
-    block_id = 'unit_0'
-    operation = 'publish'
-    operation_params = ('@location', '@user_id')
-    olx_loc_and_fmt_before = (
-        # Used to check the export before the operation takes place.
-        # List of:
-        #   - path to OLX to check
-        #   - matching OLX
-        (
-            ('drafts', 'html', 'unit_0.xml'),
-            '''
-            <html filename="html_unit"/>
-            '''
-        ),
-        (
-            ('html', 'unit_0.xml'),
-            None,
-        ),
-    )
-    olx_loc_and_fmt_after = (
-        (
-            ('drafts', 'html', 'unit_0.xml'),
-            None, # None means the file/section shouldn't exist.
-        ),
-        (
-            ('html', 'unit_0.xml'),
-            '''
-            <html filename="html_unit"/>
-            '''
-        ),
-    )
+@ddt.ddt
+class ElementalPublishingTests(UniversalTestProcedure):
 
+    @ddt.data(DRAFT_MODULESTORE_SETUP, MongoModulestoreBuilder())
+    def test_publish_old_mongo_unit(self, modulestore_builder):
+        with self._setup_test(modulestore_builder, self.course_key) as (
+            self.root_export_dir, self.contentstore, self.store, self.course
+        ):
+            block_type = 'html'
+            block_id = 'unit00'
+            # In old Mongo, you can successfully publish an item whose parent
+            # isn't published.
+            self.publish(block_type, block_id)
 
-for modulestore_backend in (
-    MixedMongoModulestoreTest,
-    MixedSplitModulestoreTest,
-    DirectMongoModulestoreTest,
-):
-    for base_test_case in (
-            TestPublishSingleUnit,
-    ):
+    @ddt.data(SPLIT_MODULESTORE_SETUP)
+    def test_publish_split_unit(self, modulestore_builder):
+        with self._setup_test(modulestore_builder, self.course_key) as (
+            self.root_export_dir, self.contentstore, self.store, self.course
+        ):
+            block_type = 'html'
+            block_id = 'unit00'
+            # In Split, you cannot publish an item whose parents are unpublished.
+            # Split will raise an exception when the item's parent(s) aren't found
+            # in the published branch.
+            with self.assertRaises(ItemNotFoundError):
+                self.publish(block_type, block_id)
 
-        test_name = base_test_case.__name__ + "With" + modulestore_backend.__name__
-        test_classes = (base_test_case, modulestore_backend)
-        vars()[test_name] = type(test_name, test_classes, {'__test__': True})
+    @ddt.data(*MODULESTORE_SETUPS)
+    def test_publish_vertical(self, modulestore_builder):
+        with self._setup_test(modulestore_builder, self.course_key) as (
+            self.root_export_dir, self.contentstore, self.store, self.course
+        ):
+            block_type = 'vertical'
+            block_id = 'vertical00'
+            parent_type = 'sequential'
+            parent_id = 'sequential00'
+            deprecated_parent_key = r'i4x://{ORG}/{COURSE}/{PARENT_TYPE}/{PARENT_ID}'.format(
+                ORG=self.course_key.org,
+                COURSE=self.course_key.course,
+                PARENT_TYPE=parent_type,
+                PARENT_ID=parent_id,
+            )
+            parent_key = r'block-v1:{ORG}\+{COURSE}\+{RUN}\+type@{PARENT_TYPE}\+block@{PARENT_ID}'.format(
+                ORG=self.course_key.org,
+                COURSE=self.course_key.course,
+                RUN=self.course_key.run,
+                PARENT_TYPE=parent_type,
+                PARENT_ID=parent_id,
+            )
+            VERTICAL_RE = """(<vertical parent_url="({DEPRECATED_PARENT_KEY}|{PARENT_KEY})"[\s]+)(index_in_children_list="0">[\s]+)(<html url_name="unit00"/>[\s]+<html url_name="unit01"/>[\s]+</vertical>)""".format(
+                DEPRECATED_PARENT_KEY=deprecated_parent_key,
+                PARENT_KEY=parent_key
+            )
+            self.assertOLXContent(block_type, block_id, draft=True, xml_re=VERTICAL_RE)
+            self.assertOLXMissing(block_type, block_id, draft=False)
+            self.publish(block_type, block_id)
+            self.assertOLXMissing(block_type, block_id, draft=True)
 
-# If we don't delete the loop variables, then they leak into the global namespace
-# and cause the last class looped through to be tested twice.
-# pylint: disable=W0631
-del modulestore_backend
-del base_test_case
 
 
