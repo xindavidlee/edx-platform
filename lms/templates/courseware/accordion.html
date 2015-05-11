@@ -19,7 +19,7 @@
           ${chapter['display_name']}
       </h3>
     </button>
-    <div class="chapter-content-container">
+    <div class="chapter-content-container" tabindex="-1">
         <div id="${chapter['display_id']}-child" role="region" aria-labelledby="${chapter['display_id']}-parent" aria-hidden="false">
             <ol>
               % for section in chapter['sections']:

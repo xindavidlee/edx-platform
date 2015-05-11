@@ -16,9 +16,33 @@
     }
   }
 
-  div#accordion {
+  #accordion {
     width: auto;
     font-size: 14px;
+
+    .chapter {
+      border: none;
+      border-radius: 0;
+      background: transparent;
+
+      .ui-accordion-header {
+        color: $link-color;
+      }
+
+      &.is-open {
+        box-shadow: none;
+        background: $white;
+
+        .ui-accordion-header {
+          color: $base-font-color;
+        }
+      }
+
+      & + .chapter-content-container {
+        border-bottom: 1px solid $gray-l3;
+        background: $white;
+      }
+    }
 
     h3 {
       border-radius: 0;

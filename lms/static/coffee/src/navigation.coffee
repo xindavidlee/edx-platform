@@ -41,7 +41,6 @@ class @Navigation
     $('#accordion .ui-accordion-content-active').removeClass('ui-accordion-content-active')
     $(this).closest('.chapter').next('div').children('div').addClass('ui-accordion-content-active')
     $('.ui-accordion-content-active').parent().show()
-    $('.ui-accordion-content-active').show()
-    $('.ui-accordion-content-active li:first-child a').focus()
+    $('.ui-accordion-content-active').show().focus()
     $('.ui-accordion-content-active').attr('aria-hidden', 'false')
 
