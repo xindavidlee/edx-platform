@@ -86,8 +86,8 @@ from django.utils.translation import ugettext as _
           <div class="code-text">
            % if not discount_applied:
            <div class="code-input">
-              <input type="text" placeholder="discount or activation code" id="input_code">
-              <input type="submit" value="Apply" class="blue" id="submit-code">
+              <input type="text" placeholder="${_('discount or activation code')}" id="input_code">
+              <input type="submit" value="${_('Apply')}" class="blue" id="submit-code">
               <span class="error-text hidden" id="code" ></span>
            </div>
            % else:
