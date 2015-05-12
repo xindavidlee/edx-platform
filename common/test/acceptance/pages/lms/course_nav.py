@@ -94,7 +94,7 @@ class CourseNavPage(PageObject):
             return
 
         # Convert list indices (start at zero) to CSS indices (start at 1)
-        subsection_css = "nav>div.chapter-content-container:nth-of-type({0})>div>ol>li:nth-of-type({1})>a".format(
+        subsection_css = "nav>div.wrapper-chapter-content:nth-of-type({0})>div>ol>li:nth-of-type({1})>a".format(
             sec_index + 1, subsec_index + 1
         )
 
@@ -140,7 +140,7 @@ class CourseNavPage(PageObject):
         """
         # Retrieve the subsection title for the section
         # Add one to the list index to get the CSS index, which starts at one
-        subsection_css = 'nav>div.chapter-content-container:nth-of-type({0})>div>ol>li>a>p:nth-of-type(1)'.format(section_index)
+        subsection_css = 'nav>div.wrapper-chapter-content:nth-of-type({0})>div>ol>li>a>p:nth-of-type(1)'.format(section_index)
 
         # If the element is visible, we can get its text directly
         # Otherwise, we need to get the HTML
@@ -172,7 +172,7 @@ class CourseNavPage(PageObject):
         (the user could go to a section, then expand another tab).
         """
         current_section_list = self.q(css='nav>button.chapter.is-open>h3').text
-        current_subsection_list = self.q(css='nav div.chapter-content-container ol li.active>a>p').text
+        current_subsection_list = self.q(css='nav div.wrapper-chapter-content ol li.active>a>p').text
 
         if len(current_section_list) == 0:
             self.warning("Could not find the current section")

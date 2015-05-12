@@ -14,7 +14,7 @@ class CoursewarePage(CoursePage):
     url_path = "courseware/"
     xblock_component_selector = '.vert .xblock'
     section_selector = '.chapter'
-    subsection_selector = '.chapter-content-container ol li'
+    subsection_selector = '.wrapper-chapter-content ol li'
 
     def is_browser_on_page(self):
         return self.q(css='body.courseware').present
@@ -92,7 +92,7 @@ class CoursewarePage(CoursePage):
         """
         return the url of the active subsection in the left nav
         """
-        return self.q(css='.chapter-content-container ol li.active a').attrs('href')[0]
+        return self.q(css='.wrapper-chapter-content ol li.is-active a').attrs('href')[0]
 
 
 class CoursewareSequentialTabPage(CoursePage):

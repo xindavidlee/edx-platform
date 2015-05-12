@@ -38,7 +38,7 @@
         }
       }
 
-      & + .chapter-content-container {
+      & + .wrapper-chapter-content {
         border-bottom: 1px solid $gray-l3;
         background: $white;
       }
@@ -135,12 +135,12 @@
       }
     }
 
-    div.chapter-content-container{
+    .wrapper-chapter-content{
       padding: 11px 14px;
       display: none;
     }
 
-    div.ui-accordion-content {
+    .ui-accordion-content {
       background: transparent;
       border: none;
       border-radius: 0;

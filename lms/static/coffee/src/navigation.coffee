@@ -18,7 +18,7 @@ class @Navigation
       $('#accordion .ui-state-active').parent().next('div').children('div').addClass('ui-accordion-content-active')
       $('#accordion .ui-state-active').parent().next('div').show()
       $('#accordion .ui-state-active').parent().attr('aria-expanded' , 'true').attr('aria-pressed' , 'true')
-      $('#accordion div').filter(':not(.chapter-content-container)').addClass("ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom").filter(":not(.ui-accordion-content-active)").hide()
+      $('#accordion div').filter(':not(.wrapper-chapter-content)').addClass("ui-accordion-content ui-helper-reset ui-widget-content ui-corner-bottom").filter(":not(.ui-accordion-content-active)").hide()
       $('.ui-accordion-content div').attr('aria-hidden', 'false')
       $('.ui-accordion-content-active div').attr('aria-hidden', 'true')
       $('#open_close_accordion a').click @toggle
