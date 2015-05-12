@@ -5,7 +5,6 @@ import os
 import re
 import unittest
 import ddt
-import itertools
 from shutil import rmtree
 from tempfile import mkdtemp
 from nose.plugins.attrib import attr
@@ -167,16 +166,27 @@ class UniversalTestSetup(unittest.TestCase):
     def _create_course(self, store, course_key):
         """
         Create the course that'll be published below. The course has a binary structure, meaning:
-        The course has two chapters (chapter_0 & chapter_1), each of which has two sequentials (seqential_0/1 & sequential_2/3),
+        The course has two chapters (chapter_0 & chapter_1), each of which has two sequentials (sequential_0/1 & sequential_2/3),
         each of which has two verticals (vertical_0/1 - vertical_6/7), each of which has two units (unit_0/1 - unit_14/15).
         """
         def _create_child(parent, block_type, block_id):
+            """
+            Create a child block within the course.
+            """
             return store.create_child(
                 self.user_id, parent.location, block_type, block_id=block_id
             )
 
         def _make_block_id(block_type, num):
+            """
+            Given a block_type/num, return a block id.
+            """
             return '{}{:02d}'.format(block_type, num)
+
+        # Course block database is keyed on (block_type, block_id) pairs.
+        # It's built during the course creation below and contains all the parent/child
+        # data needed to check the OLX.
+        self.course_db = {}
 
         # Create all the course items on the draft branch.
         with store.branch_setting(ModuleStoreEnum.Branch.draft_preferred):
@@ -199,20 +209,46 @@ class UniversalTestSetup(unittest.TestCase):
             # Create verticals.
             block_type = 'vertical'
             for idx in xrange(0, 8):
-                parent_item = getattr(self, _make_block_id('sequential', idx / 2))
+                parent_type = 'sequential'
+                parent_id = _make_block_id(parent_type, idx / 2)
+                parent_item = getattr(self, parent_id)
                 block_id = _make_block_id(block_type, idx)
                 setattr(self, block_id, _create_child(parent_item, block_type, block_id))
+                db_entry = {
+                    (block_type, block_id) : {
+                        'parent_type' : parent_type,
+                        'parent_id' : parent_id,
+                        'index_in_children_list' : idx % 2,
+                        'child_ids' : (
+                            ('html', _make_block_id('unit', idx * 2)),
+                            ('html', _make_block_id('unit', idx * 2 + 1)),
+                        )
+                    }
+                }
+                self.course_db.update(db_entry)
 
             # Create units.
             block_type = 'unit'
             for idx in xrange(0, 16):
-                parent_item = getattr(self, _make_block_id('vertical', idx / 2))
+                parent_type = 'vertical'
+                parent_id = _make_block_id(parent_type, idx / 2)
+                parent_item = getattr(self, parent_id)
                 block_id = _make_block_id(block_type, idx)
                 setattr(self, block_id, _create_child(parent_item, 'html', block_id))
+                db_entry = {
+                    ('html', block_id) : {
+                        'parent_type' : parent_type,
+                        'parent_id' : parent_id,
+                        'index_in_children_list' : idx % 2,
+                        'filename' : block_id,
+                    }
+                }
+                self.course_db.update(db_entry)
 
     def setUp(self):
         self.user_id = -3
         self.course_key = CourseLocator('test_org', 'test_course', 'test_run')
+        super(UniversalTestSetup, self).setUp()
 
 
 class OLXFormatChecker(unittest.TestCase):
@@ -398,6 +434,39 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
         self._export_if_not_already()
         super(UniversalTestProcedure, self).assertOLXMissing(block_type, block_id, **kwargs)
 
+    def _assertOLXIsDraftOrPublished(self, block_list, draft=None):
+        """
+        Check that all blocks in the list are draft blocks in the OLX format when the course is exported.
+        """
+        for block_data in block_list:
+            block_params = self.course_db.get(block_data)
+            self.assertIsNotNone(block_params)
+            (block_type, block_id) = block_data
+            regex_func = None
+            if block_type == 'vertical':
+                regex_func = self._make_vertical_matching_regex
+            elif block_type == 'html':
+                regex_func = self._make_html_unit_matching_regex
+            block_regex = regex_func(
+                self.course_key,
+                draft=draft,
+                **block_params
+            )
+            self.assertOLXContent(block_type, block_id, draft=draft, xml_re=block_regex)
+            self.assertOLXMissing(block_type, block_id, draft=(not draft))
+
+    def assertOLXIsDraft(self, block_list):
+        """
+        Check that all blocks in the list are draft blocks in the OLX format when the course is exported.
+        """
+        self._assertOLXIsDraftOrPublished(block_list, draft=True)
+
+    def assertOLXIsPublished(self, block_list):
+        """
+        Check that all blocks in the list are published blocks in the OLX format when the course is exported.
+        """
+        self._assertOLXIsDraftOrPublished(block_list, draft=False)
+
     def publish(self, block_type, block_id):
         # Get the specified test item from the draft branch.
         with self.store.branch_setting(ModuleStoreEnum.Branch.draft_preferred):
@@ -440,103 +509,56 @@ class ElementalPublishingTests(UniversalTestProcedure):
         with self._setup_test(modulestore_builder, self.course_key) as (
             self.root_export_dir, self.contentstore, self.store, self.course
         ):
-            # Ensure that vertical00 is a draft in OLX.
-            vertical00_regex = self._make_vertical_matching_regex(
-                self.course_key,
-                draft=True,
-                parent_type='sequential',
-                parent_id='sequential00',
-                index_in_children_list=0,
-                child_ids=(('html', 'unit00'), ('html', 'unit01')),
+            block_list = (
+                ('vertical', 'vertical00'),
+                ('html', 'unit00'),
+                ('html', 'unit01'),
             )
-            self.assertOLXContent('vertical', 'vertical00', draft=True, xml_re=vertical00_regex)
-            self.assertOLXMissing('vertical', 'vertical00', draft=False)
-
-            # Ensure that unit00/unit01 are both drafts in OLX.
-            unit00_regex = self._make_html_unit_matching_regex(
-                self.course_key,
-                draft=True,
-                filename='unit00',
-            )
-            self.assertOLXContent('html', 'unit00', draft=True, xml_re=unit00_regex)
-            self.assertOLXMissing('html', 'unit00', draft=False)
-            unit01_regex = self._make_html_unit_matching_regex(
-                self.course_key,
-                draft=True,
-                filename='unit01',
-            )
-            self.assertOLXContent('html', 'unit01', draft=True, xml_re=unit01_regex)
-            self.assertOLXMissing('html', 'unit01', draft=False)
-
-            ######################################
+            # Ensure that the vertical and its children are drafts in the exported OLX.
+            self.assertOLXIsDraft(block_list)
+            # Publish the vertical block.
             self.publish('vertical', 'vertical00')
-            ######################################
-
-            # Ensure that vertical00 is now published in OLX.
-            vertical00_published_regex = self._make_vertical_matching_regex(
-                self.course_key,
-                draft=False,
-                child_ids=(('html', 'unit00'), ('html', 'unit01')),
-            )
-            self.assertOLXContent('vertical', 'vertical00', draft=False, xml_re=vertical00_published_regex)
-            self.assertOLXMissing('vertical', 'vertical00', draft=True)
-
-            # Ensure that unit00/unit01 are now both published in OLX.
-            unit00_regex = self._make_html_unit_matching_regex(
-                self.course_key,
-                draft=False,
-                filename='unit00',
-            )
-            self.assertOLXContent('html', 'unit00', draft=False, xml_re=unit00_regex)
-            self.assertOLXMissing('html', 'unit00', draft=True)
-            unit01_regex = self._make_html_unit_matching_regex(
-                self.course_key,
-                draft=False,
-                filename='unit01',
-            )
-            self.assertOLXContent('html', 'unit01', draft=False, xml_re=unit01_regex)
-            self.assertOLXMissing('html', 'unit01', draft=True)
+            # Ensure that the vertical and its children are published in the exported OLX.
+            self.assertOLXIsPublished(block_list)
 
     @ddt.data(*MODULESTORE_SETUPS)
     def test_publish_multiple_verticals(self, modulestore_builder):
         with self._setup_test(modulestore_builder, self.course_key) as (
             self.root_export_dir, self.contentstore, self.store, self.course
         ):
-            # Ensure that vertical02 is not published.
-            vertical02_regex = self._make_vertical_matching_regex(
-                self.course_key,
-                draft=True,
-                parent_type='sequential',
-                parent_id='sequential01',
-                index_in_children_list=0,
-                child_ids=(('html', 'unit04'), ('html', 'unit05')),
+            block_list_publish = (
+                ('vertical', 'vertical03'),
+                ('vertical', 'vertical04'),
+                ('html', 'unit06'),
+                ('html', 'unit07'),
+                ('html', 'unit08'),
+                ('html', 'unit09'),
             )
-            self.assertOLXContent('vertical', 'vertical02', draft=True, xml_re=vertical02_regex)
-            self.assertOLXMissing('vertical', 'vertical02', draft=False)
 
-            # Ensure that vertical03 is not published.
-            vertical03_regex = self._make_vertical_matching_regex(
-                self.course_key,
-                draft=True,
-                parent_type='sequential',
-                parent_id='sequential01',
-                index_in_children_list=1,
-                child_ids=(('html', 'unit06'), ('html', 'unit07')),
+            block_list_untouched = (
+                ('vertical', 'vertical00'),
+                ('vertical', 'vertical01'),
+                ('vertical', 'vertical02'),
+                ('vertical', 'vertical05'),
+                ('vertical', 'vertical06'),
+                ('vertical', 'vertical07'),
+                ('html', 'unit00'),
+                ('html', 'unit01'),
+                ('html', 'unit02'),
+                ('html', 'unit03'),
+                ('html', 'unit04'),
+                ('html', 'unit05'),
+                ('html', 'unit10'),
+                ('html', 'unit11'),
+                ('html', 'unit12'),
+                ('html', 'unit13'),
+                ('html', 'unit14'),
+                ('html', 'unit15'),
             )
-            self.assertOLXContent('vertical', 'vertical03', draft=True, xml_re=vertical03_regex)
-            self.assertOLXMissing('vertical', 'vertical03', draft=False)
 
-            # Ensure that vertical04 is not published.
-            vertical04_regex = self._make_vertical_matching_regex(
-                self.course_key,
-                draft=True,
-                parent_type='sequential',
-                parent_id='sequential02',
-                index_in_children_list=0,
-                child_ids=(('html', 'unit08'), ('html', 'unit09')),
-            )
-            self.assertOLXContent('vertical', 'vertical04', draft=True, xml_re=vertical04_regex)
-            self.assertOLXMissing('vertical', 'vertical04', draft=False)
+            # Ensure that both groups of verticals and children are drafts in the exported OLX.
+            self.assertOLXIsDraft(block_list_publish)
+            self.assertOLXIsDraft(block_list_untouched)
 
             ##########################################
             # Publish both vertical03 and vertical 04.
@@ -544,24 +566,7 @@ class ElementalPublishingTests(UniversalTestProcedure):
             self.publish('vertical', 'vertical04')
             ##########################################
 
-            # Ensure that vertical02 is *STILL* not published.
-            self.assertOLXContent('vertical', 'vertical02', draft=True, xml_re=vertical02_regex)
-            self.assertOLXMissing('vertical', 'vertical02', draft=False)
-
-            # Ensure that vertical03 is published.
-            vertical03_published_regex = self._make_vertical_matching_regex(
-                self.course_key,
-                draft=False,
-                child_ids=(('html', 'unit06'), ('html', 'unit07')),
-            )
-            self.assertOLXContent('vertical', 'vertical03', draft=False, xml_re=vertical03_published_regex)
-            self.assertOLXMissing('vertical', 'vertical03', draft=True)
-
-            # Ensure that vertical04 is published.
-            vertical04_published_regex = self._make_vertical_matching_regex(
-                self.course_key,
-                draft=False,
-                child_ids=(('html', 'unit08'), ('html', 'unit09')),
-            )
-            self.assertOLXContent('vertical', 'vertical04', draft=False, xml_re=vertical04_published_regex)
-            self.assertOLXMissing('vertical', 'vertical04', draft=True)
+            # Ensure that the published verticals and children are indeed published in the exported OLX.
+            self.assertOLXIsPublished(block_list_publish)
+            # Ensure that the untouched vertical and children are still untouched.
+            self.assertOLXIsDraft(block_list_untouched)
