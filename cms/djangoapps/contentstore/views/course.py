@@ -879,6 +879,7 @@ def settings_handler(request, course_key_string):
                 'short_description_editable': short_description_editable,
                 'upload_asset_url': upload_asset_url,
                 'course_handler_url': reverse_course_url('course_handler', course_key),
+                'language_options': settings.ALL_LANGUAGES,
             }
             if prerequisite_course_enabled:
                 courses, in_process_course_actions = get_courses_accessible_to_user(request)

@@ -17,6 +17,7 @@ from xmodule.modulestore.django import modulestore
 # Note: The 'video' attribute is intentionally excluded as it must be
 # handled separately; its value maps to an alternate key name.
 ABOUT_ATTRIBUTES = [
+    'language',
     'syllabus',
     'short_description',
     'overview',
@@ -33,6 +34,7 @@ class CourseDetails(object):
         self.org = org
         self.course_id = course_id
         self.run = run
+        self.language = None
         self.start_date = None  # 'start'
         self.end_date = None  # 'end'
         self.enrollment_start = None
