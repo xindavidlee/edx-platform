@@ -468,9 +468,11 @@ class ElementalPublishingTests(UniversalTestProcedure):
             self.assertOLXContent('html', 'unit01', draft=True, xml_re=unit01_regex)
             self.assertOLXMissing('html', 'unit01', draft=False)
 
+            ######################################
             self.publish('vertical', 'vertical00')
+            ######################################
 
-            # Ensure that vertical00 is published in OLX.
+            # Ensure that vertical00 is now published in OLX.
             vertical00_published_regex = self._make_vertical_matching_regex(
                 self.course_key,
                 draft=False,
@@ -478,6 +480,22 @@ class ElementalPublishingTests(UniversalTestProcedure):
             )
             self.assertOLXContent('vertical', 'vertical00', draft=False, xml_re=vertical00_published_regex)
             self.assertOLXMissing('vertical', 'vertical00', draft=True)
+
+            # Ensure that unit00/unit01 are now both published in OLX.
+            unit00_regex = self._make_html_unit_matching_regex(
+                self.course_key,
+                draft=False,
+                filename='unit00',
+            )
+            self.assertOLXContent('html', 'unit00', draft=False, xml_re=unit00_regex)
+            self.assertOLXMissing('html', 'unit00', draft=True)
+            unit01_regex = self._make_html_unit_matching_regex(
+                self.course_key,
+                draft=False,
+                filename='unit01',
+            )
+            self.assertOLXContent('html', 'unit01', draft=False, xml_re=unit01_regex)
+            self.assertOLXMissing('html', 'unit01', draft=True)
 
     @ddt.data(*MODULESTORE_SETUPS)
     def test_publish_multiple_verticals(self, modulestore_builder):
