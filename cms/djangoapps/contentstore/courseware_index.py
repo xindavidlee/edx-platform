@@ -491,6 +491,7 @@ class CourseAboutSearchIndexer(object):
         AboutInfo("enrollment_end", AboutInfo.PROPERTY, AboutInfo.FROM_COURSE_PROPERTY),
         AboutInfo("org", AboutInfo.PROPERTY, AboutInfo.FROM_COURSE_PROPERTY),
         AboutInfo("modes", AboutInfo.PROPERTY, AboutInfo.FROM_COURSE_MODE),
+        AboutInfo("language", AboutInfo.PROPERTY, AboutInfo.FROM_ABOUT_INFO),
     ]
 
     @classmethod
