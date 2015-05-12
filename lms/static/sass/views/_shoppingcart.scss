@@ -148,7 +148,7 @@ $card-errors-background: #FFEEF5;
     }
   }
 
-  input[type="submit"], button {
+  button[type="submit"] {
     @include float(right);
     @extend %t-icon3;
     display: inline-block;
@@ -207,7 +207,6 @@ $card-errors-background: #FFEEF5;
 
     // STATE: focus
     &:focus {
-      @extend %no-outline;
       box-shadow: none;
       border-color: $dark-gray2;
     }
@@ -385,7 +384,7 @@ $card-errors-background: #FFEEF5;
 
             label {
               @extend %t-icon5;
-              @extend %t-regular;
+              @extend %t-strong;
               text-transform: uppercase;
               color: $light-gray2;
               font-style: normal;
@@ -419,7 +418,7 @@ $card-errors-background: #FFEEF5;
               }
             }
 
-            .button {
+            button {
               @include margin-left(-$baseline*1.5);
               position: absolute;
               box-shadow: none;
@@ -440,12 +439,16 @@ $card-errors-background: #FFEEF5;
 
               //CASE: has class inc
               &.inc {
+                @extend %no-outline;
                 top: ($baseline*0.45);
+                width: auto;
               }
 
               //CASE: has class dec
               &.dec {
+                @extend %no-outline;
                 top: ($baseline*1.5);
+                width: auto;
                 height: ($baseline*1.1);
               }
             }
@@ -498,9 +501,15 @@ $card-errors-background: #FFEEF5;
           padding-top: ($baseline*0.65);
           width: ($baseline*2);
 
-          a.btn-remove {
+          button.btn-remove {
             @include float(right);
             opacity: 0.8;
+            background: none;
+            box-shadow: none;
+            border: none;
+            width: auto;
+            height: auto;
+            text-shadow: none;
 
             i {
               @include line-height(27.02);
@@ -583,8 +592,10 @@ $card-errors-background: #FFEEF5;
         color: $red1;
       }
 
-      input[type="submit"] {
+      button[type="submit"] {
         padding: ($baseline*0.45) ($baseline*1.75);
+        width: auto;
+        height: ($baseline*2.25);
       }
     }
 
@@ -597,7 +608,7 @@ $card-errors-background: #FFEEF5;
         color: $green1;
       }
 
-      input[type="submit"] {
+      button[type="submit"] {
         padding: ($baseline*0.45) ($baseline*1.75);
         box-shadow: none;
         border: $input-border;
@@ -614,7 +625,7 @@ $card-errors-background: #FFEEF5;
       }
     }
 
-    input[type="submit"] {
+    button[type="submit"] {
       @extend %t-icon5;
       @extend %t-strong;
       float: none;
@@ -707,14 +718,14 @@ $card-errors-background: #FFEEF5;
       @include float(right);
       width: 65%;
 
-      input[type="submit"] {
+      button[type="submit"] {
         @include float(right);
         @include margin-left($baseline*0.75);
         @include padding(($baseline*0.9), ($baseline*3), ($baseline*1.1), ($baseline*1.5));
         @extend %t-icon3;
         @extend %t-strong;
         width: auto;
-        height: auto;
+        height: ($baseline*3.35);
         letter-spacing: 0;
 
         // CASE: has id register
