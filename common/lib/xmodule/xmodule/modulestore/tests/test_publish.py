@@ -185,6 +185,18 @@ class UniversalTestSetup(unittest.TestCase):
             """
             return '{}{:02d}'.format(block_type, num)
 
+        def _make_course_db_entry(parent_type, parent_id, block_id, idx, child_block_type, child_block_id_base):
+            return {
+                'parent_type' : parent_type,
+                'parent_id' : parent_id,
+                'index_in_children_list' : idx % 2,
+                'filename' : block_id,
+                'child_ids' : (
+                    (child_block_type, _make_block_id(child_block_id_base, idx * 2)),
+                    (child_block_type, _make_block_id(child_block_id_base, idx * 2 + 1)),
+                )
+            }
+
         # Create all the course items on the draft branch.
         with store.branch_setting(ModuleStoreEnum.Branch.draft_preferred):
             # Create course.
@@ -193,8 +205,16 @@ class UniversalTestSetup(unittest.TestCase):
             # Create chapters.
             block_type = 'chapter'
             for idx in xrange(0, 2):
+                parent_type = 'course'
+                parent_id = 'course'
                 block_id = _make_block_id(block_type, idx)
                 setattr(self, block_id, _create_child(self.course, block_type, block_id))
+                db_entry = {
+                    (block_type, block_id) : _make_course_db_entry(
+                        parent_type, parent_id, block_id, idx, 'sequential', 'sequential'
+                    )
+                }
+                self.course_db.update(db_entry)
 
             # Create sequentials.
             block_type = 'sequential'
@@ -205,15 +225,9 @@ class UniversalTestSetup(unittest.TestCase):
                 block_id = _make_block_id(block_type, idx)
                 setattr(self, block_id, _create_child(parent_item, block_type, block_id))
                 db_entry = {
-                    (block_type, block_id) : {
-                        'parent_type' : parent_type,
-                        'parent_id' : parent_id,
-                        'index_in_children_list' : idx % 2,
-                        'child_ids' : (
-                            ('vertical', _make_block_id('vertical', idx * 2)),
-                            ('vertical', _make_block_id('vertical', idx * 2 + 1)),
-                        )
-                    }
+                    (block_type, block_id) : _make_course_db_entry(
+                        parent_type, parent_id, block_id, idx, 'vertical', 'vertical'
+                    )
                 }
                 self.course_db.update(db_entry)
 
@@ -226,33 +240,24 @@ class UniversalTestSetup(unittest.TestCase):
                 block_id = _make_block_id(block_type, idx)
                 setattr(self, block_id, _create_child(parent_item, block_type, block_id))
                 db_entry = {
-                    (block_type, block_id) : {
-                        'parent_type' : parent_type,
-                        'parent_id' : parent_id,
-                        'index_in_children_list' : idx % 2,
-                        'child_ids' : (
-                            ('html', _make_block_id('unit', idx * 2)),
-                            ('html', _make_block_id('unit', idx * 2 + 1)),
-                        )
-                    }
+                    (block_type, block_id) : _make_course_db_entry(
+                        parent_type, parent_id, block_id, idx, 'html', 'unit'
+                    )
                 }
                 self.course_db.update(db_entry)
 
-            # Create units.
-            block_type = 'unit'
+            # Create html units.
+            block_type = 'html'
             for idx in xrange(0, 16):
                 parent_type = 'vertical'
                 parent_id = _make_block_id(parent_type, idx / 2)
                 parent_item = getattr(self, parent_id)
-                block_id = _make_block_id(block_type, idx)
+                block_id = _make_block_id('unit', idx)
                 setattr(self, block_id, _create_child(parent_item, 'html', block_id))
                 db_entry = {
-                    ('html', block_id) : {
-                        'parent_type' : parent_type,
-                        'parent_id' : parent_id,
-                        'index_in_children_list' : idx % 2,
-                        'filename' : block_id,
-                    }
+                    (block_type, block_id) : _make_course_db_entry(
+                        parent_type, parent_id, block_id, idx, 'html', 'unit'
+                    )
                 }
                 self.course_db.update(db_entry)
 
@@ -285,7 +290,7 @@ class OLXFormatChecker(unittest.TestCase):
         """
         Ensure that the course has been exported and return course export dir.
         """
-        block_path = os.path.join(self.root_export_dir, self.export_dir)
+        block_path = os.path.join(self.root_export_dir, self.export_dir) # pylint: disable=no-member
         self.assertTrue(
             os.path.isdir(block_path),
             msg='{} is not a dir.'.format(block_path)
@@ -301,7 +306,7 @@ class OLXFormatChecker(unittest.TestCase):
             block_path = os.path.join(block_path, 'drafts')
         return os.path.join(block_path, block_type)
 
-    def _get_block_filename(self, block_type, block_id):
+    def _get_block_filename(self, block_id):
         """
         Return the course export filename for a block.
         """
@@ -312,14 +317,14 @@ class OLXFormatChecker(unittest.TestCase):
         Determine the filename containing the block info.
         Return the file contents.
         """
-        block_file = self._get_block_filename(block_type, block_id)
+        block_file = self._get_block_filename(block_id)
         block_file_path = os.path.join(block_subdir_path, block_file)
         self.assertTrue(
             os.path.isfile(block_file_path),
             msg='{} is not an existing file.'.format(block_file_path)
         )
-        with open(block_file_path, "r") as fp:
-            return fp.read()
+        with open(block_file_path, "r") as file_handle:
+            return file_handle.read()
 
     def assertOLXContent(self, block_type, block_id, **kwargs):
         """
@@ -350,7 +355,7 @@ class OLXFormatChecker(unittest.TestCase):
         course_export_dir = self._get_course_export_dir()
         is_draft = kwargs.pop('draft', False)
         block_path = self._get_block_type_path(course_export_dir, block_type, is_draft)
-        block_file_path = os.path.join(block_path, self._get_block_filename(block_type, block_id))
+        block_file_path = os.path.join(block_path, self._get_block_filename(block_id))
         self.assertFalse(
             os.path.exists(block_file_path),
             msg='{} exists but should not!'.format(block_file_path)
@@ -358,6 +363,9 @@ class OLXFormatChecker(unittest.TestCase):
 
 
 class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
+    """
+    Setup base class for draft/published/OLX tests.
+    """
 
     EXPORTED_COURSE_BEFORE_DIR_NAME = 'exported_course_before'
     EXPORTED_COURSE_AFTER_DIR_NAME = 'exported_course_after'
@@ -372,6 +380,9 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
 
     @contextmanager
     def _create_export_dir(self):
+        """
+        Create a temporary export dir - and clean it up when done.
+        """
         try:
             export_dir = mkdtemp()
             yield export_dir
@@ -487,7 +498,14 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
         else:
             return self._make_block_matching_regex(course_key, draft, 'sequential', **kwargs)
 
-    def _make_html_unit_matching_regex(self, course_key, draft, **kwargs):
+    def _make_chapter_matching_regex(self, course_key, draft, **kwargs):
+        """
+        Make a matching regular expression for a chapter.
+        """
+        #return '<chapter/>'
+        return self._make_block_matching_regex(course_key, draft, 'chapter', **kwargs)
+
+    def _make_html_unit_matching_regex(self, course_key, draft, **kwargs): # pylint: disable=unused-argument
         """
         Make a matching regular expression for an HTML unit.
         """
@@ -512,7 +530,7 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
         self._export_if_not_already()
         super(UniversalTestProcedure, self).assertOLXMissing(block_type, block_id, **kwargs)
 
-    def _assertOLXIsDraftOrPublished(self, block_list, draft, **kwargs):
+    def _assertOLXBase(self, block_list, draft, **kwargs):
         """
         Check that all blocks in the list are draft blocks in the OLX format when the course is exported.
         """
@@ -521,7 +539,9 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
             self.assertIsNotNone(block_params)
             (block_type, block_id) = block_data
             regex_func = None
-            if block_type == 'sequential':
+            if block_type == 'chapter':
+                regex_func = self._make_chapter_matching_regex
+            elif block_type == 'sequential':
                 regex_func = self._make_sequential_matching_regex
                 block_params.update({'seq_children_published': kwargs.get('seq_children_published')})
             elif block_type == 'vertical':
@@ -540,13 +560,13 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
         """
         Check that all blocks in the list are draft blocks in the OLX format when the course is exported.
         """
-        self._assertOLXIsDraftOrPublished(block_list, draft=True, **kwargs)
+        self._assertOLXBase(block_list, draft=True, **kwargs)
 
     def assertOLXIsPublished(self, block_list, **kwargs):
         """
         Check that all blocks in the list are published blocks in the OLX format when the course is exported.
         """
-        self._assertOLXIsDraftOrPublished(block_list, draft=False, **kwargs)
+        self._assertOLXBase(block_list, draft=False, **kwargs)
 
     def publish(self, block_type, block_id):
         """
@@ -564,7 +584,9 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
 
 @ddt.ddt
 class ElementalPublishingTests(UniversalTestProcedure):
-
+    """
+    Tests for the publish() operation.
+    """
     @ddt.data(DRAFT_MODULESTORE_SETUP, MongoModulestoreBuilder())
     def test_publish_old_mongo_unit(self, modulestore_builder):
         with self._setup_test(modulestore_builder, self.course_key) as (
@@ -679,11 +701,65 @@ class ElementalPublishingTests(UniversalTestProcedure):
             )
             # Ensure that the autopublished sequential exists as such in the exported OLX.
             self.assertOLXIsPublished(block_list_autopublished, seq_children_published=False)
-            # Ensure that the vertical and its children are drafts in the exported OLX.
+            # Ensure that the verticals and their children are drafts in the exported OLX.
             self.assertOLXIsDraft(block_list)
-            # Publish the vertical block.
+            # Publish the sequential block.
             self.publish('sequential', 'sequential00')
             # Ensure that the sequential is still published in the exported OLX.
             self.assertOLXIsPublished(block_list_autopublished, seq_children_published=True)
-            # Ensure that the vertical and its children are published in the exported OLX.
+            # Ensure that the verticals and their children are published in the exported OLX.
             self.assertOLXIsPublished(block_list)
+
+    @ddt.data(*MODULESTORE_SETUPS)
+    def test_publish_single_chapter(self, modulestore_builder):
+        """
+        Chapters are auto-published.
+        """
+        with self._setup_test(modulestore_builder, self.course_key) as (
+            self.root_export_dir, self.contentstore, self.store, self.course
+        ):
+            block_list_autopublished = (
+                ('chapter', 'chapter00'),
+            )
+            block_list_published = (
+                ('vertical', 'vertical00'),
+                ('vertical', 'vertical01'),
+                ('vertical', 'vertical02'),
+                ('vertical', 'vertical03'),
+                ('html', 'unit00'),
+                ('html', 'unit01'),
+                ('html', 'unit02'),
+                ('html', 'unit03'),
+                ('html', 'unit04'),
+                ('html', 'unit05'),
+                ('html', 'unit06'),
+                ('html', 'unit07'),
+            )
+            block_list_untouched = (
+                ('vertical', 'vertical04'),
+                ('vertical', 'vertical05'),
+                ('vertical', 'vertical06'),
+                ('vertical', 'vertical07'),
+                ('html', 'unit08'),
+                ('html', 'unit09'),
+                ('html', 'unit10'),
+                ('html', 'unit11'),
+                ('html', 'unit12'),
+                ('html', 'unit13'),
+                ('html', 'unit14'),
+                ('html', 'unit15'),
+            )
+            # Ensure that the autopublished chapter exists as such in the exported OLX.
+            self.assertOLXIsPublished(block_list_autopublished)
+            # Ensure that the verticals and their children are drafts in the exported OLX.
+            self.assertOLXIsDraft(block_list_published)
+            self.assertOLXIsDraft(block_list_untouched)
+            # Publish the chapter block.
+            self.publish('chapter', 'chapter00')
+            # Ensure that the chapter is still published in the exported OLX.
+            self.assertOLXIsPublished(block_list_autopublished)
+            # Ensure that the vertical and its children are published in the exported OLX.
+            self.assertOLXIsPublished(block_list_published)
+            # Ensure that the other vertical and children are not published.
+            self.assertOLXIsDraft(block_list_untouched)
+
