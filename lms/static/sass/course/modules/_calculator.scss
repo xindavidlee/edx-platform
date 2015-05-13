@@ -60,7 +60,7 @@ div.calc-main {
       @include box-sizing(border-box);
       padding: lh();
 
-      input#calculator_button {
+      button#calculator_button {
         background: #111;
         border: 1px solid $black;
         border-radius: 0;
