@@ -186,6 +186,9 @@ class UniversalTestSetup(unittest.TestCase):
             return '{}{:02d}'.format(block_type, num)
 
         def _make_course_db_entry(parent_type, parent_id, block_id, idx, child_block_type, child_block_id_base):
+            """
+            Make a single entry for the course DB.
+            """
             return {
                 'parent_type' : parent_type,
                 'parent_id' : parent_id,
@@ -256,7 +259,7 @@ class UniversalTestSetup(unittest.TestCase):
                 setattr(self, block_id, _create_child(parent_item, 'html', block_id))
                 db_entry = {
                     (block_type, block_id) : _make_course_db_entry(
-                        parent_type, parent_id, block_id, idx, 'html', 'unit'
+                        parent_type, parent_id, block_id, idx, '----', '----'
                     )
                 }
                 self.course_db.update(db_entry)
@@ -312,7 +315,7 @@ class OLXFormatChecker(unittest.TestCase):
         """
         return '{}.xml'.format(block_id)
 
-    def _get_block_contents(self, block_subdir_path, block_type, block_id):
+    def _get_block_contents(self, block_subdir_path, block_id):
         """
         Determine the filename containing the block info.
         Return the file contents.
@@ -336,7 +339,7 @@ class OLXFormatChecker(unittest.TestCase):
         xml_to_check = kwargs.pop('xml', None)
         xml_re_to_check = kwargs.pop('xml_re', None)
         block_path = self._get_block_type_path(course_export_dir, block_type, is_draft)
-        block_contents = self._get_block_contents(block_path, block_type, block_id)
+        block_contents = self._get_block_contents(block_path, block_id)
         if xml_to_check:
             self.assertIn(xml_to_check, block_contents)
         if xml_re_to_check:
@@ -394,14 +397,14 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
         """
         Create the export dir, contentstore, and modulestore for a test.
         """
-        with self._create_export_dir() as export_dir:
+        with self._create_export_dir() as self.root_export_dir:
             # Construct the contentstore for storing the first import
-            with MongoContentstoreBuilder().build() as test_content:
+            with MongoContentstoreBuilder().build() as self.contentstore:
                 # Construct the modulestore for storing the first import (using the previously created contentstore)
-                with modulestore_builder.build(contentstore=test_content) as test_modulestore:
+                with modulestore_builder.build(contentstore=self.contentstore) as self.store:
                     # Create the course.
-                    course = self._create_course(test_modulestore, course_key)
-                    yield export_dir, test_content, test_modulestore, course
+                    self.course = self._create_course(self.store, course_key)
+                    yield
 
     def _export_if_not_already(self):
         """
@@ -530,7 +533,7 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
         self._export_if_not_already()
         super(UniversalTestProcedure, self).assertOLXMissing(block_type, block_id, **kwargs)
 
-    def _assertOLXBase(self, block_list, draft, **kwargs):
+    def _assertOLXBase(self, block_list, draft, **kwargs): # pylint: disable=invalid-name
         """
         Check that all blocks in the list are draft blocks in the OLX format when the course is exported.
         """
@@ -589,50 +592,26 @@ class ElementalPublishingTests(UniversalTestProcedure):
     """
     @ddt.data(DRAFT_MODULESTORE_SETUP, MongoModulestoreBuilder())
     def test_publish_old_mongo_unit(self, modulestore_builder):
-        with self._setup_test(modulestore_builder, self.course_key) as (
-            self.root_export_dir, self.contentstore, self.store, self.course
-        ):
-            block_type = 'html'
-            block_id = 'unit00'
+        with self._setup_test(modulestore_builder, self.course_key):
+
             # In old Mongo, you can successfully publish an item whose parent
             # isn't published.
-            self.publish(block_type, block_id)
+            self.publish('html', 'unit00')
 
     @ddt.data(SPLIT_MODULESTORE_SETUP)
     def test_publish_split_unit(self, modulestore_builder):
-        with self._setup_test(modulestore_builder, self.course_key) as (
-            self.root_export_dir, self.contentstore, self.store, self.course
-        ):
-            block_type = 'html'
-            block_id = 'unit00'
+        with self._setup_test(modulestore_builder, self.course_key):
+
             # In Split, you cannot publish an item whose parents are unpublished.
             # Split will raise an exception when the item's parent(s) aren't found
             # in the published branch.
             with self.assertRaises(ItemNotFoundError):
-                self.publish(block_type, block_id)
-
-    @ddt.data(*MODULESTORE_SETUPS)
-    def test_publish_single_vertical(self, modulestore_builder):
-        with self._setup_test(modulestore_builder, self.course_key) as (
-            self.root_export_dir, self.contentstore, self.store, self.course
-        ):
-            block_list = (
-                ('vertical', 'vertical00'),
-                ('html', 'unit00'),
-                ('html', 'unit01'),
-            )
-            # Ensure that the vertical and its children are drafts in the exported OLX.
-            self.assertOLXIsDraft(block_list)
-            # Publish the vertical block.
-            self.publish('vertical', 'vertical00')
-            # Ensure that the vertical and its children are published in the exported OLX.
-            self.assertOLXIsPublished(block_list)
+                self.publish('html', 'unit00')
 
     @ddt.data(*MODULESTORE_SETUPS)
     def test_publish_multiple_verticals(self, modulestore_builder):
-        with self._setup_test(modulestore_builder, self.course_key) as (
-            self.root_export_dir, self.contentstore, self.store, self.course
-        ):
+        with self._setup_test(modulestore_builder, self.course_key):
+
             block_list_publish = (
                 ('vertical', 'vertical03'),
                 ('vertical', 'vertical04'),
@@ -641,7 +620,6 @@ class ElementalPublishingTests(UniversalTestProcedure):
                 ('html', 'unit08'),
                 ('html', 'unit09'),
             )
-
             block_list_untouched = (
                 ('vertical', 'vertical00'),
                 ('vertical', 'vertical01'),
@@ -684,13 +662,11 @@ class ElementalPublishingTests(UniversalTestProcedure):
         Sequentials are auto-published. But publishing them explictly publishes their children,
         changing the OLX of each sequential - the vertical children are in the sequential post-publish.
         """
-        with self._setup_test(modulestore_builder, self.course_key) as (
-            self.root_export_dir, self.contentstore, self.store, self.course
-        ):
+        with self._setup_test(modulestore_builder, self.course_key):
+
             block_list_autopublished = (
                 ('sequential', 'sequential00'),
             )
-
             block_list = (
                 ('vertical', 'vertical00'),
                 ('vertical', 'vertical01'),
@@ -715,9 +691,8 @@ class ElementalPublishingTests(UniversalTestProcedure):
         """
         Chapters are auto-published.
         """
-        with self._setup_test(modulestore_builder, self.course_key) as (
-            self.root_export_dir, self.contentstore, self.store, self.course
-        ):
+        with self._setup_test(modulestore_builder, self.course_key):
+
             block_list_autopublished = (
                 ('chapter', 'chapter00'),
             )
