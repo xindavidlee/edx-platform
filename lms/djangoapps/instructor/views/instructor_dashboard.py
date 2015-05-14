@@ -38,16 +38,16 @@ from course_modes.models import CourseMode, CourseModesArchive
 from student.roles import CourseFinanceAdminRole, CourseSalesAdminRole
 from certificates.models import CertificateGenerationConfiguration
 from certificates import api as certs_api
+from openedx.core.djangoapps.plugins.api import CourseViewType
 
 from class_dashboard.dashboard_data import get_section_display_name, get_array_section_has_problem
 from .tools import get_units_with_due_date, title_or_url, bulk_email_is_enabled_for_course
 from opaque_keys.edx.locations import SlashSeparatedCourseKey
 
-
 log = logging.getLogger(__name__)
 
 
-class InstructorDashboardViewType(object):
+class InstructorDashboardViewType(CourseViewType):
     """
     Defines the Instructor Dashboard view type that is shown as a course tab.
     """

@@ -176,13 +176,12 @@ class CourseTab(object):
                 'Unknown tab type {0}. Known types: {1}'.format(tab_type_name, available_tab_types)
             )
         tab_type = available_tab_types[tab_dict['type']]
+        tab_type.validate(tab_dict)
         # TODO: don't import openedx capabilities from common
-        from openedx.core.djangoapps.plugins.api import Plugin
-        if isinstance(tab_type, Plugin):
-            CourseViewTab.validate(tab_dict)
+        from openedx.core.djangoapps.plugins.api import CourseViewType
+        if issubclass(tab_type, CourseViewType):
             return CourseViewTab(tab_type, tab_dict=tab_dict)
         else:
-            tab_type.validate(tab_dict)
             return tab_type(tab_dict=tab_dict)
 
 
@@ -755,10 +754,6 @@ class CourseViewTab(AuthenticatedCourseTab):
         if not super(CourseViewTab, self).is_enabled(course, settings, user=user):
             return False
         return self.course_view_type.is_enabled(course, settings, user=user)
-
-    @classmethod
-    def validate(cls, tab_dict, raise_error=True):
-        return super(CourseViewTab, cls).validate(tab_dict, raise_error) and need_name(tab_dict, raise_error)
 
 
 class CourseTabList(List):
