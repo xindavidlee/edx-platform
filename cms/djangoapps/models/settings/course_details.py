@@ -17,7 +17,6 @@ from xmodule.modulestore.django import modulestore
 # Note: The 'video' attribute is intentionally excluded as it must be
 # handled separately; its value maps to an alternate key name.
 ABOUT_ATTRIBUTES = [
-    'language',
     'syllabus',
     'short_description',
     'overview',
@@ -81,6 +80,7 @@ class CourseDetails(object):
         course_details.pre_requisite_courses = descriptor.pre_requisite_courses
         course_details.course_image_name = descriptor.course_image
         course_details.course_image_asset_path = course_image_url(descriptor)
+        course_details.language = descriptor.language
 
         for attribute in ABOUT_ATTRIBUTES:
             value = cls._fetch_about_attribute(course_key, attribute)
@@ -173,6 +173,10 @@ class CourseDetails(object):
         if 'pre_requisite_courses' in jsondict \
                 and sorted(jsondict['pre_requisite_courses']) != sorted(descriptor.pre_requisite_courses):
             descriptor.pre_requisite_courses = jsondict['pre_requisite_courses']
+            dirty = True
+
+        if 'language' in jsondict and jsondict['language'] != descriptor.language:
+            descriptor.language = jsondict['language']
             dirty = True
 
         if dirty:
