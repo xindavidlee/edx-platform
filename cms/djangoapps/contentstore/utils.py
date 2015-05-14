@@ -3,7 +3,6 @@ Common utility functions useful throughout the contentstore
 """
 # pylint: disable=no-member
 
-import copy
 import logging
 import re
 from datetime import datetime
@@ -266,59 +265,6 @@ def ancestor_has_staff_lock(xblock, parent_xblock=None):
             return False
         parent_xblock = modulestore().get_item(parent_location)
     return parent_xblock.visible_to_staff_only
-
-
-def add_extra_panel_tab(tab_type, course):
-    """
-    Used to add the panel tab to a course if it does not exist.
-    @param tab_type: A string representing the tab type.
-    @param course: A course object from the modulestore.
-    @return: Boolean indicating whether or not a tab was added and a list of tabs for the course.
-    """
-    # Copy course tabs
-    course_tabs = copy.copy(course.tabs)
-
-    # Check to see if open ended panel is defined in the course
-    tab_panel = _get_tab_panel_for_type(tab_type)
-    if tab_panel in course_tabs:
-        return False, course_tabs
-
-    # Add panel to the tabs if it is not defined
-    course_tabs.append(tab_panel)
-    return True, course_tabs
-
-
-def remove_extra_panel_tab(tab_type, course):
-    """
-    Used to remove the panel tab from a course if it exists.
-    @param tab_type: A string representing the tab type.
-    @param course: A course object from the modulestore.
-    @return: Boolean indicating whether or not a tab was added and a list of tabs for the course.
-    """
-    # Copy course tabs
-    course_tabs = copy.copy(course.tabs)
-
-    # Check to see if open ended panel is not defined in the course
-    tab_panel = _get_tab_panel_for_type(tab_type)
-    if tab_panel not in course_tabs:
-        return False, course_tabs
-
-    # Remove panel from the tabs if it is not defined
-    course_tabs = [ct for ct in course_tabs if ct != tab_panel]
-    return True, course_tabs
-
-
-def _get_tab_panel_for_type(tab_type):
-    """
-    Returns a tab panel representation for the specified tab type.
-    """
-    tab_panel = EXTRA_TAB_PANELS.get(tab_type)
-    if tab_panel:
-        return tab_panel
-    return {
-        "name": tab_type.title,
-        "type": tab_type.name
-    }
 
 
 def reverse_url(handler_name, key_name=None, key_value=None, kwargs=None):
