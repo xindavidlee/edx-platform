@@ -1,25 +1,24 @@
+<%namespace name='static' file='static_content.html'/>
+<%!
+from django.utils.translation import ugettext as _
+from django.utils.translation import get_language_bidi
+from microsite_configuration import microsite
+from microsite_configuration import page_title_breadcrumbs
+from django.utils.http import urlquote_plus
+
+dir_rtl = 'rtl' if get_language_bidi() else 'ltr'
+%>
 <!DOCTYPE html>
 <!--[if IE 7]><html class="ie ie7 lte9 lte8 lte7" lang="${LANGUAGE_CODE}"><![endif]-->
 <!--[if IE 8]><html class="ie ie8 lte9 lte8" lang="${LANGUAGE_CODE}"><![endif]-->
 <!--[if IE 9]><html class="ie ie9 lte9" lang="${LANGUAGE_CODE}"><![endif]-->
 <!--[if gt IE 9]><!--><html lang="${LANGUAGE_CODE}"><!--<![endif]-->
-<%
-    # set doc language direction
-    from django.utils.translation import get_language_bidi
-    dir_rtl = 'rtl' if get_language_bidi() else 'ltr'
-%>
 <head dir="${dir_rtl}">
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     % if responsive:
     <meta name="viewport" content="width=device-width, initial-scale=1">
     % endif
-<%! from django.utils.translation import ugettext as _ %>
-<%! from microsite_configuration import microsite %>
-<%! from microsite_configuration import page_title_breadcrumbs %>
-
-<%namespace name='static' file='static_content.html'/>
-<%! from django.utils.http import urlquote_plus %>
 
 ## Define a couple of helper functions to make life easier when
 ## embedding theme conditionals into templates. All inheriting
@@ -65,7 +64,19 @@
   <link rel="icon" type="image/x-icon" href="${static.url(microsite.get_value('favicon_path', settings.FAVICON_PATH))}" />
 
   <%static:css group='style-vendor'/>
-  <%static:css group='style-main'/>
+  ## route around the overwhelmingly complicated static:css nonsense
+  <%
+  if settings.FEATURES.get(USE_CUSTOM_THEME, False):
+    application_css_path = "sass/themes/{theme}/lms-main{rtl}.css".format(
+      theme=settings.FEATURES["THEME_NAME"],
+      rtl="-rtl" if get_language_bidi() else "",
+    )
+  else:
+    application_css_path = "sass/lms-main{rtl}.css".format(
+      rtl="-rtl" if get_language_bidi() else "",
+    )
+  %>
+  <link rel="stylesheet" href="${static.url(application_css_path)}" type="text/css" media="all" />
 
   % if disable_courseware_js:
     <%static:js group='base_vendor'/>

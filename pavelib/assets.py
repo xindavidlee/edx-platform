@@ -143,16 +143,6 @@ def compile_sass(debug=False):
     ))
 
 
-def compile_templated_sass(systems, settings):
-    """
-    Render Mako templates for Sass files.
-    `systems` is a list of systems (e.g. 'lms' or 'studio' or both)
-    `settings` is the Django settings module to use.
-    """
-    for sys in systems:
-        sh(django_cmd(sys, settings, 'preprocess_assets'))
-
-
 def process_xmodule_assets():
     """
     Process XModule static assets.
@@ -228,7 +218,6 @@ def update_assets(args):
     )
     args = parser.parse_args(args)
 
-    compile_templated_sass(args.system, args.settings)
     process_xmodule_assets()
     compile_coffeescript()
     compile_sass(args.debug)

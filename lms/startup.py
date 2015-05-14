@@ -66,7 +66,7 @@ def enable_theme():
     # Workaround for setting THEME_NAME to an empty
     # string which is the default due to this ansible
     # bug: https://github.com/ansible/ansible/issues/4812
-    if settings.THEME_NAME == "":
+    if getattr(settings, "THEME_NAME", "") == "":
         settings.THEME_NAME = None
         return
 
