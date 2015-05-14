@@ -4,8 +4,10 @@ Registers the "edX Notes" feature for the edX platform.
 
 from django.utils.translation import ugettext as _
 
+from openedx.core.djangoapps.plugins.api import CourseViewType
 
-class EdxNotesCourseViewType(object):
+
+class EdxNotesCourseViewType(CourseViewType):
     """
     The representation of the edX Notes course view type.
     """

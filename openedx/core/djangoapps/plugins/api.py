@@ -31,8 +31,7 @@ class PluginManager(object):
             plugins = {}
             extension_manager = ExtensionManager(namespace=cls.NAMESPACE)  # pylint: disable=no-member
             for plugin_name in extension_manager.names():
-                plugin = Plugin(plugin_name, extension_manager[plugin_name].plugin)
-                plugins[plugin_name] = plugin
+                plugins[plugin_name] = extension_manager[plugin_name].plugin
             cls._plugins = plugins
         return cls._plugins
 
@@ -50,23 +49,20 @@ class PluginManager(object):
         return plugins[name]
 
 
-class Plugin(object):
-    """
-    A plugin to the edX platform.
-    """
-    def __init__(self, name, plugin):
-        self.name = name
-        self.plugin = plugin
-
-    def __getattr__(self, attr):
-        return getattr(self.plugin, attr)
-
-
 class FeatureManager(PluginManager):
     """
     Manager for all of the edX features that have been made available.
     """
     NAMESPACE = FEATURE_NAMESPACE
+
+
+class CourseViewType(object):
+    """
+    Base class of all course view type plugins.
+    """
+    @classmethod
+    def validate(cls, tab_dict, raise_error=True):
+        return True
 
 
 class CourseViewTypeManager(PluginManager):
