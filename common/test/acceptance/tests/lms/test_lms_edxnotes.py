@@ -448,6 +448,19 @@ class EdxNotesPageTest(EventsTestMixin, EdxNotesTestMixin):
         ]
         self.assert_events_match(expected_events, actual_events)
 
+    def assert_search_event(self, search_string, number_of_results):
+        """
+        Verifies that the correct searched event was captured for the Notes page.
+        """
+        actual_events = self.wait_for_events(
+            event_filter={'event_type': 'edx.course.student_notes.searched'},
+            number_of_matches=1
+        )
+        expected_events = [
+            {'event': {'search_string': search_string, 'number_of_results': number_of_results}}
+        ]
+        self.assert_events_match(expected_events, actual_events)
+
     def test_no_content(self):
         """
         Scenario: User can see `No content` message.
@@ -774,6 +787,7 @@ class EdxNotesPageTest(EventsTestMixin, EdxNotesTestMixin):
         Then I see that error message disappears
         And I see that "Search Results" tab appears with 4 notes found
         And an event has fired indicating that the Search Results view was selected
+        And an event has fired recording the search that was performed
         """
         self._add_default_notes()
         self.notes_page.visit()
@@ -826,6 +840,7 @@ class EdxNotesPageTest(EventsTestMixin, EdxNotesTestMixin):
         )
 
         self.assert_viewed_event('Search Results')
+        self.assert_search_event('note', 4)
 
     def test_scroll_to_tag_recent_activity(self):
         """

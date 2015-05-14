@@ -82,7 +82,7 @@ define([
             expect(scrollToTagSpy.scrollToTag).toHaveBeenCalledWith("only");
         });
 
-        it('should log the edx.student_notes.used_unit_link event properly', function () {
+        it('should log the edx.course.student_notes.used_unit_link event properly', function () {
             var requests = AjaxHelpers.requests(this),
                 view = getView();
             spyOn(view, 'redirectTo');
