@@ -50,7 +50,8 @@ function (HTML5Video, Resizer) {
             figureOutStartEndTime: figureOutStartEndTime,
             figureOutStartingTime: figureOutStartingTime,
             updatePlayTime: updatePlayTime,
-            logStopVideo:logStopVideo
+            logStopVideo: logStopVideo,
+            logPauseVideo: logPauseVideo
         };
 
     VideoPlayer.prototype = methodsDict;
@@ -534,8 +535,13 @@ function (HTML5Video, Resizer) {
 
     function onEnded() {
         var time = this.videoPlayer.duration();
-        this.videoPlayer.logStopVideo();
 
+        // Emit 'pause_video' event when a video ends if Player is of YoutubeType
+        if (this.isYoutubeType()) {
+            this.videoPlayer.logPauseVideo();
+        }
+
+        this.videoPlayer.logStopVideo();
         this.trigger('videoControl.pause', null);
         this.trigger('videoProgressSlider.notifyThroughHandleEnd', {
             end: true
@@ -554,12 +560,7 @@ function (HTML5Video, Resizer) {
     }
 
     function onPause() {
-        this.videoPlayer.log(
-            'pause_video',
-            {
-                currentTime: this.videoPlayer.currentTime
-            }
-        );
+        this.videoPlayer.logPauseVideo();
 
         this.videoPlayer.stopTimer();
 
@@ -592,8 +593,19 @@ function (HTML5Video, Resizer) {
     }
 
     function logStopVideo(){
+        // Emit 'stop_video' event
         this.videoPlayer.log(
             'stop_video',
+            {
+                currentTime: this.videoPlayer.currentTime
+            }
+        );
+    }
+
+    function logPauseVideo(){
+        // Emit 'pause_video' event
+        this.videoPlayer.log(
+            'pause_video',
             {
                 currentTime: this.videoPlayer.currentTime
             }

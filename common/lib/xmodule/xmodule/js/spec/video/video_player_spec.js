@@ -352,6 +352,15 @@ function (VideoPlayer) {
                     expect($.fn.trigger).toHaveBeenCalledWith('ended', {});
                 });
 
+                it('log pause_video event', function () {
+                    expect(state.videoPlayer.log).toHaveBeenCalledWith(
+                        'pause_video',
+                        {
+                            currentTime: state.videoPlayer.currentTime
+                        }
+                    );
+                });
+
                 it('log stop_video event', function () {
                     expect(state.videoPlayer.log).toHaveBeenCalledWith(
                         'stop_video',
