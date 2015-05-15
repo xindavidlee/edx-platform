@@ -21,6 +21,7 @@ import json
 from xblock.fields import Scope, List, String, Dict, Boolean, Integer, Float
 from .fields import Date
 from django.utils.timezone import UTC
+from django.conf import settings
 
 log = logging.getLogger(__name__)
 
@@ -32,6 +33,8 @@ DEFAULT_START_DATE = datetime(2030, 1, 1, tzinfo=UTC())
 CATALOG_VISIBILITY_CATALOG_AND_ABOUT = "both"
 CATALOG_VISIBILITY_ABOUT = "about"
 CATALOG_VISIBILITY_NONE = "none"
+
+DEFAULT_COURSE_LANGUAGE = getattr(settings, "DEFAULT_COURSE_LANGUAGE", "en")
 
 
 class StringOrDate(Date):
@@ -844,6 +847,12 @@ class CourseFields(object):
         ),
         default=None,
         scope=Scope.settings,
+    )
+    language = String(
+        display_name=_("Course Language"),
+        help=_("Specify the language of your course."),
+        default=DEFAULT_COURSE_LANGUAGE,
+        scope=Scope.settings
     )
 
 
