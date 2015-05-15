@@ -24,9 +24,6 @@ class CcxCourseViewType(CourseViewType):
         """
         if not user or not settings.FEATURES.get('CUSTOM_COURSES_EDX', False):
             return False
-        from opaque_keys.edx.locations import SlashSeparatedCourseKey
         from student.roles import CourseCcxCoachRole  # pylint: disable=import-error
-        course_id = course.id.to_deprecated_string()
-        course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
-        role = CourseCcxCoachRole(course_key)
+        role = CourseCcxCoachRole(course.id)
         return role.has_user(user)

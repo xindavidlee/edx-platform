@@ -80,7 +80,11 @@ class CourseViewType(object):
         raise NotImplementedError()
 
     @classmethod
-    def validate(cls, tab_dict, raise_error=True):
+    def validate(cls, tab_dict, raise_error=True):  # pylint: disable=unused-argument
+        """
+        Validates the given dict-type `tab_dict` object to ensure it contains the expected keys.
+        This method should be overridden by subclasses that require certain keys to be persisted in the tab.
+        """
         return True
 
 
