@@ -3,9 +3,10 @@ Definition of the course team feature.
 """
 
 from django.utils.translation import ugettext as _
+from openedx.core.djangoapps.plugins.api import CourseViewType
 
 
-class TeamsCourseViewType(object):
+class TeamsCourseViewType(CourseViewType):
     """
     The representation of the course teams view type.
     """
@@ -25,4 +26,4 @@ class TeamsCourseViewType(object):
             user (User): the user interacting with the course
         """
         # TODO: the tab is only enabled if at least one team topic is defined
-        return not user or settings.FEATURES.get('ENABLE_TEAMS', False)
+        return not user or settings.FEATURES.get('ENABLE_TEAMS', False) or not course.teams_enabled
