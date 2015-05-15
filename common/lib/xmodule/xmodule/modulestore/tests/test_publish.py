@@ -5,6 +5,7 @@ import os
 import re
 import unittest
 import ddt
+import uuid
 from shutil import rmtree
 from tempfile import mkdtemp
 from nose.plugins.attrib import attr
@@ -12,6 +13,7 @@ from contextlib import contextmanager
 import xml.etree.ElementTree as ET
 
 from opaque_keys.edx.locator import CourseLocator
+from xmodule.exceptions import InvalidVersionError
 from xmodule.modulestore import ModuleStoreEnum
 from xmodule.modulestore.exceptions import ItemNotFoundError
 from xmodule.modulestore.xml_exporter import export_course_to_xml
@@ -191,11 +193,11 @@ class UniversalTestSetup(unittest.TestCase):
             Make a single entry for the course DB.
             """
             return {
-                'parent_type' : parent_type,
-                'parent_id' : parent_id,
-                'index_in_children_list' : idx % 2,
-                'filename' : block_id,
-                'child_ids' : (
+                'parent_type': parent_type,
+                'parent_id': parent_id,
+                'index_in_children_list': idx % 2,
+                'filename': block_id,
+                'child_ids': (
                     (child_block_type, _make_block_id(child_block_id_base, idx * 2)),
                     (child_block_type, _make_block_id(child_block_id_base, idx * 2 + 1)),
                 )
@@ -214,7 +216,7 @@ class UniversalTestSetup(unittest.TestCase):
                 block_id = _make_block_id(block_type, idx)
                 setattr(self, block_id, _create_child(self.course, block_type, block_id))
                 db_entry = {
-                    (block_type, block_id) : _make_course_db_entry(
+                    (block_type, block_id): _make_course_db_entry(
                         parent_type, parent_id, block_id, idx, 'sequential', 'sequential'
                     )
                 }
@@ -229,7 +231,7 @@ class UniversalTestSetup(unittest.TestCase):
                 block_id = _make_block_id(block_type, idx)
                 setattr(self, block_id, _create_child(parent_item, block_type, block_id))
                 db_entry = {
-                    (block_type, block_id) : _make_course_db_entry(
+                    (block_type, block_id): _make_course_db_entry(
                         parent_type, parent_id, block_id, idx, 'vertical', 'vertical'
                     )
                 }
@@ -244,11 +246,12 @@ class UniversalTestSetup(unittest.TestCase):
                 block_id = _make_block_id(block_type, idx)
                 setattr(self, block_id, _create_child(parent_item, block_type, block_id))
                 db_entry = {
-                    (block_type, block_id) : _make_course_db_entry(
+                    (block_type, block_id): _make_course_db_entry(
                         parent_type, parent_id, block_id, idx, 'html', 'unit'
                     )
                 }
                 self.course_db.update(db_entry)
+                self.all_verticals.append((block_type, block_id))
 
             # Create html units.
             block_type = 'html'
@@ -259,16 +262,21 @@ class UniversalTestSetup(unittest.TestCase):
                 block_id = _make_block_id('unit', idx)
                 setattr(self, block_id, _create_child(parent_item, 'html', block_id))
                 db_entry = {
-                    (block_type, block_id) : _make_course_db_entry(
-                        parent_type, parent_id, block_id, idx, '----', '----'
+                    (block_type, block_id): _make_course_db_entry(
+                        parent_type, parent_id, block_id, idx, '', ''
                     )
                 }
                 self.course_db.update(db_entry)
+                self.all_units.append((block_type, block_id))
 
     def setUp(self):
         self.user_id = -3
         self.course_key = CourseLocator('test_org', 'test_course', 'test_run')
         self.course = None
+
+        # For convenience, maintain a list of (block_type, block_id) pairs for all verticals/units.
+        self.all_verticals = []
+        self.all_units = []
 
         # Course block database is keyed on (block_type, block_id) pairs.
         # It's built during the course creation below and contains all the parent/child
@@ -294,7 +302,7 @@ class OLXFormatChecker(unittest.TestCase):
         """
         Ensure that the course has been exported and return course export dir.
         """
-        block_path = os.path.join(self.root_export_dir, self.export_dir) # pylint: disable=no-member
+        block_path = os.path.join(self.root_export_dir, self.export_dir)  # pylint: disable=no-member
         self.assertTrue(
             os.path.isdir(block_path),
             msg='{} is not a dir.'.format(block_path)
@@ -349,14 +357,14 @@ class OLXFormatChecker(unittest.TestCase):
             """
             self.assertEqual(xml_root.tag, tag)
             if attrs:
-                for attr, attr_re in attrs.iteritems():
+                for attr_name, attr_re in attrs.iteritems():
                     if attr_re:
-                        self.assertIn(attr, xml_root.attrib)
+                        self.assertIn(attr_name, xml_root.attrib)
                         attr_re_comp = re.compile(attr_re)
                         self.assertIsNotNone(
-                            attr_re_comp.search(xml_root.attrib[attr]),
+                            attr_re_comp.search(xml_root.attrib[attr_name]),
                             msg='Attr {} of tag {} doesn\'t match regex of:\n{}'.format(
-                                attr, tag, attr_re
+                                attr_name, tag, attr_re
                             )
                         )
             else:
@@ -437,6 +445,10 @@ class OLXFormatChecker(unittest.TestCase):
         )
 
     def _make_xml_parse_regex(self, block_type, course_key, draft, **kwargs):
+        """
+        Construct a dictionary containing regular expressions that will
+        be used to validate block XML.
+        """
         parent_url_regex = None
         child_index_regex = None
         if draft:
@@ -466,11 +478,11 @@ class OLXFormatChecker(unittest.TestCase):
         attrs = {}
         if block_type == 'html':
             filename = kwargs.pop('filename', None)
-            attrs.update({'filename' : filename})
+            attrs.update({'filename': filename})
         else:
             attrs.update({
-                'parent_url' : parent_url_regex,
-                'index_in_children_list' : child_index_regex
+                'parent_url': parent_url_regex,
+                'index_in_children_list': child_index_regex
             })
 
         # If children exist, construct regular expressions to check them.
@@ -484,15 +496,15 @@ class OLXFormatChecker(unittest.TestCase):
             child_id_regex = '|'.join([child[1] for child in child_types_ids])
 
         return {
-            'tag' : block_type,
-            'attrs' : attrs,
-            'children' : {
-                'tag' : child_type,
-                'attrs' : {'url_name' : child_id_regex},
+            'tag': block_type,
+            'attrs': attrs,
+            'children': {
+                'tag': child_type,
+                'attrs': {'url_name' : child_id_regex},
             }
         }
 
-    def _assertOLXBase(self, block_list, draft, **kwargs): # pylint: disable=invalid-name
+    def _assertOLXBase(self, block_list, draft):  # pylint: disable=invalid-name
         """
         Check that all blocks in the list are draft blocks in the OLX format when the course is exported.
         """
@@ -504,17 +516,26 @@ class OLXFormatChecker(unittest.TestCase):
             self.assertOLXContent(block_type, block_id, draft=draft, xml_parse=xml_parse_regex)
             self.assertOLXMissing(block_type, block_id, draft=(not draft))
 
-    def assertOLXIsDraft(self, block_list, **kwargs):
+    def assertOLXIsDraft(self, block_list):
         """
         Check that all blocks in the list are draft blocks in the OLX format when the course is exported.
         """
-        self._assertOLXBase(block_list, draft=True, **kwargs)
+        self._assertOLXBase(block_list, draft=True)
 
-    def assertOLXIsPublished(self, block_list, **kwargs):
+    def assertOLXIsPublished(self, block_list):
         """
         Check that all blocks in the list are published blocks in the OLX format when the course is exported.
         """
-        self._assertOLXBase(block_list, draft=False, **kwargs)
+        self._assertOLXBase(block_list, draft=False)
+
+    def assertOLXIsDeleted(self, block_list):
+        """
+        Check that all blocks in the list are no longer in the OLX format when the course is exported.
+        """
+        for block_data in block_list:
+            (block_type, block_id) = block_data
+            self.assertOLXMissing(block_type, block_id, draft=True)
+            self.assertOLXMissing(block_type, block_id, draft=False)
 
 
 class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
@@ -523,7 +544,7 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
     """
 
     EXPORTED_COURSE_BEFORE_DIR_NAME = 'exported_course_before'
-    EXPORTED_COURSE_AFTER_DIR_NAME = 'exported_course_after'
+    EXPORTED_COURSE_AFTER_DIR_NAME = 'exported_course_after_{}'
 
     def setUp(self):
         super(UniversalTestProcedure, self).setUp()
@@ -531,7 +552,6 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
         self.root_export_dir = None
         self.contentstore = None
         self.store = None
-        self.before_publish = True
 
     @contextmanager
     def _create_export_dir(self):
@@ -587,6 +607,12 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
         self._export_if_not_already()
         super(UniversalTestProcedure, self).assertOLXMissing(block_type, block_id, **kwargs)
 
+    def _make_new_export_dir_name(self):
+        """
+        Make a unique name for the new export dir.
+        """
+        return self.EXPORTED_COURSE_AFTER_DIR_NAME.format(unicode(uuid.uuid4())[:8])
+
     def publish(self, block_type, block_id):
         """
         Get an item, publish it, and shift to a new course export dir.
@@ -597,8 +623,19 @@ class UniversalTestProcedure(OLXFormatChecker, UniversalTestSetup):
         # Publish the draft item to the published branch.
         self.store.publish(test_item.location, self.user_id)
         # Since the elemental operation is now complete, shift to the post-operation export directory name.
-        self.export_dir = self.EXPORTED_COURSE_AFTER_DIR_NAME
-        self.before_publish = False
+        self.export_dir = self._make_new_export_dir_name()
+
+    def unpublish(self, block_type, block_id):
+        """
+        Get an item, unpublish it, and shift to a new course export dir.
+        """
+        # Get the specified test item from the published branch.
+        with self.store.branch_setting(ModuleStoreEnum.Branch.published_only):
+            test_item = self.store.get_item(self.course_key.make_usage_key(block_type=block_type, block_id=block_id))
+        # Unpublish the draft item from the published branch.
+        self.store.unpublish(test_item.location, self.user_id)
+        # Since the elemental operation is now complete, shift to the post-operation export directory name.
+        self.export_dir = self._make_new_export_dir_name()
 
 
 @ddt.ddt
@@ -606,6 +643,25 @@ class ElementalPublishingTests(UniversalTestProcedure):
     """
     Tests for the publish() operation.
     """
+    @ddt.data(*MODULESTORE_SETUPS)
+    def test_autopublished_chapters_sequentials(self, modulestore_builder):
+        with self._setup_test(modulestore_builder, self.course_key):
+            # When a course is created out of chapters/sequentials/verticals/units
+            # as this course is, the chapters/sequentials are auto-published
+            # and the verticals/units are not.
+            # Ensure that this is indeed the case by verifying the OLX.
+            block_list_autopublished = (
+                ('chapter', 'chapter00'),
+                ('chapter', 'chapter01'),
+                ('sequential', 'sequential00'),
+                ('sequential', 'sequential01'),
+                ('sequential', 'sequential02'),
+                ('sequential', 'sequential03'),
+            )
+            block_list_draft = self.all_verticals + self.all_units
+            self.assertOLXIsPublished(block_list_autopublished)
+            self.assertOLXIsDraft(block_list_draft)
+
     @ddt.data(DRAFT_MODULESTORE_SETUP, MongoModulestoreBuilder())
     def test_publish_old_mongo_unit(self, modulestore_builder):
         with self._setup_test(modulestore_builder, self.course_key):
@@ -661,11 +717,9 @@ class ElementalPublishingTests(UniversalTestProcedure):
             self.assertOLXIsDraft(block_list_publish)
             self.assertOLXIsDraft(block_list_untouched)
 
-            ##########################################
             # Publish both vertical03 and vertical 04.
             self.publish('vertical', 'vertical03')
             self.publish('vertical', 'vertical04')
-            ##########################################
 
             # Ensure that the published verticals and children are indeed published in the exported OLX.
             self.assertOLXIsPublished(block_list_publish)
@@ -692,13 +746,13 @@ class ElementalPublishingTests(UniversalTestProcedure):
                 ('html', 'unit03'),
             )
             # Ensure that the autopublished sequential exists as such in the exported OLX.
-            self.assertOLXIsPublished(block_list_autopublished, seq_children_published=False)
+            self.assertOLXIsPublished(block_list_autopublished)
             # Ensure that the verticals and their children are drafts in the exported OLX.
             self.assertOLXIsDraft(block_list)
             # Publish the sequential block.
             self.publish('sequential', 'sequential00')
             # Ensure that the sequential is still published in the exported OLX.
-            self.assertOLXIsPublished(block_list_autopublished, seq_children_published=True)
+            self.assertOLXIsPublished(block_list_autopublished)
             # Ensure that the verticals and their children are published in the exported OLX.
             self.assertOLXIsPublished(block_list)
 
@@ -753,4 +807,103 @@ class ElementalPublishingTests(UniversalTestProcedure):
             self.assertOLXIsPublished(block_list_published)
             # Ensure that the other vertical and children are not published.
             self.assertOLXIsDraft(block_list_untouched)
+
+
+@ddt.ddt
+class ElementalUnpublishingTests(UniversalTestProcedure):
+    """
+    Tests for the unpublish() operation.
+    """
+    @ddt.data(*MODULESTORE_SETUPS)
+    def test_unpublish_draft_vertical(self, modulestore_builder):
+        with self._setup_test(modulestore_builder, self.course_key):
+
+            block_list_to_unpublish = (
+                ('vertical', 'vertical02'),
+            )
+            # The vertical is a draft.
+            self.assertOLXIsDraft(block_list_to_unpublish)
+            # Since there's no published version, attempting an unpublish throws an exception.
+            with self.assertRaises(ItemNotFoundError):
+                self.unpublish('vertical', 'vertical02')
+
+    @ddt.data(*MODULESTORE_SETUPS)
+    def test_unpublish_published_vertical(self, modulestore_builder):
+        with self._setup_test(modulestore_builder, self.course_key):
+
+            block_list_to_unpublish = (
+                ('vertical', 'vertical02'),
+            )
+            block_list_children_of_unpublished = (
+                ('html', 'unit04'),
+                ('html', 'unit05'),
+            )
+            block_list_untouched = (
+                ('vertical', 'vertical04'),
+                ('vertical', 'vertical05'),
+                ('vertical', 'vertical06'),
+                ('vertical', 'vertical07'),
+                ('html', 'unit08'),
+                ('html', 'unit09'),
+                ('html', 'unit10'),
+                ('html', 'unit11'),
+                ('html', 'unit12'),
+                ('html', 'unit13'),
+                ('html', 'unit14'),
+                ('html', 'unit15'),
+            )
+            # At first, no vertical or unit is published.
+            self.assertOLXIsDraft(block_list_to_unpublish)
+            self.assertOLXIsDraft(block_list_children_of_unpublished)
+            self.assertOLXIsDraft(block_list_untouched)
+            # Then publish a vertical.
+            self.publish('vertical', 'vertical02')
+            # The published vertical and its children will be published.
+            self.assertOLXIsPublished(block_list_to_unpublish)
+            self.assertOLXIsPublished(block_list_children_of_unpublished)
+            self.assertOLXIsDraft(block_list_untouched)
+            # Now, unpublish the same vertical.
+            self.unpublish('vertical', 'vertical02')
+            # The unpublished vertical and its children will now be a draft.
+            self.assertOLXIsDraft(block_list_to_unpublish)
+            self.assertOLXIsDraft(block_list_children_of_unpublished)
+            self.assertOLXIsDraft(block_list_untouched)
+
+    @ddt.data(DRAFT_MODULESTORE_SETUP, MongoModulestoreBuilder())
+    def test_unpublish_old_mongo_draft_sequential(self, modulestore_builder):
+        with self._setup_test(modulestore_builder, self.course_key):
+
+            # In old Mongo, you cannot successfully unpublish an autopublished sequential.
+            # An exception is thrown.
+            with self.assertRaises(InvalidVersionError):
+                self.unpublish('sequential', 'sequential03')
+
+    @ddt.data(SPLIT_MODULESTORE_SETUP)
+    def test_unpublish_split_draft_sequential(self, modulestore_builder):
+        with self._setup_test(modulestore_builder, self.course_key):
+
+            # In Split, the sequential is deleted.
+            # The sequential's children are orphaned - but they stay in
+            # the same draft state they were before.
+            block_list_to_unpublish = (
+                ('sequential', 'sequential03'),
+            )
+            block_list_children_of_unpublished = (
+                ('vertical', 'vertical06'),
+                ('vertical', 'vertical07'),
+                ('html', 'unit12'),
+                ('html', 'unit13'),
+                ('html', 'unit14'),
+                ('html', 'unit15'),
+            )
+            # The autopublished sequential is published - its children are draft.
+            self.assertOLXIsPublished(block_list_to_unpublish)
+            self.assertOLXIsDraft(block_list_children_of_unpublished)
+            # Unpublish the sequential.
+            self.unpublish('sequential', 'sequential03')
+            # Since the sequential was autopublished, a draft version of the sequential never existed.
+            # So unpublishing the sequential doesn't make it a draft - it deletes it!
+            self.assertOLXIsDeleted(block_list_to_unpublish)
+            # Its children are orphaned and remain as drafts.
+            self.assertOLXIsDraft(block_list_children_of_unpublished)
 
