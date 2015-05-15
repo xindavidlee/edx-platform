@@ -363,9 +363,9 @@
         }
 
         &.is-active {
+            @include border-bottom-left-radius(0);
+            @include border-bottom-right-radius(0);
             border-bottom-width: 0;
-            border-bottom-left-radius: 0;
-            border-bottom-right-radius: 0;
             border-color: $gray-l3;
             background: $white;
 
@@ -379,14 +379,14 @@
             @extend %ui-depth1;
             @extend %ui-no-list;
             @extend %anim-fadeIn;
+            @include border-top-left-radius(0);
+            @include border-top-right-radius(0);
             position: absolute;
             min-width: ($baseline*7.5);
             max-width: ($baseline*12.5);
             margin-top: -1px;
             border: 1px solid $gray-l3;
             border-radius: 3px;
-            border-top-left-radius: 0;
-            border-top-right-radius: 0;
             background: $white;
             box-shadow: 0 2px 2px rgba(0, 0, 0, .15);
             font-size: $body-font-size;
