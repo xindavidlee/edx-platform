@@ -500,11 +500,11 @@ class OLXFormatChecker(unittest.TestCase):
             'attrs': attrs,
             'children': {
                 'tag': child_type,
-                'attrs': {'url_name' : child_id_regex},
+                'attrs': {'url_name': child_id_regex},
             }
         }
 
-    def _assertOLXBase(self, block_list, draft):  # pylint: disable=invalid-name
+    def _assertOLXBase(self, block_list, draft, published):  # pylint: disable=invalid-name
         """
         Check that all blocks in the list are draft blocks in the OLX format when the course is exported.
         """
@@ -512,21 +512,34 @@ class OLXFormatChecker(unittest.TestCase):
             block_params = self.course_db.get(block_data)
             self.assertIsNotNone(block_params)
             (block_type, block_id) = block_data
-            xml_parse_regex = self._make_xml_parse_regex(block_type, self.course_key, draft=draft, **block_params)
-            self.assertOLXContent(block_type, block_id, draft=draft, xml_parse=xml_parse_regex)
-            self.assertOLXMissing(block_type, block_id, draft=(not draft))
+            if draft:
+                xml_parse_regex = self._make_xml_parse_regex(block_type, self.course_key, draft=True, **block_params)
+                self.assertOLXContent(block_type, block_id, draft=True, xml_parse=xml_parse_regex)
+            else:
+                self.assertOLXMissing(block_type, block_id, draft=True)
+            if published:
+                xml_parse_regex = self._make_xml_parse_regex(block_type, self.course_key, draft=False, **block_params)
+                self.assertOLXContent(block_type, block_id, draft=False, xml_parse=xml_parse_regex)
+            else:
+                self.assertOLXMissing(block_type, block_id, draft=False)
 
-    def assertOLXIsDraft(self, block_list):
+    def assertOLXIsDraftOnly(self, block_list):
         """
-        Check that all blocks in the list are draft blocks in the OLX format when the course is exported.
+        Check that all blocks in the list are only draft blocks in the OLX format when the course is exported.
         """
-        self._assertOLXBase(block_list, draft=True)
+        self._assertOLXBase(block_list, draft=True, published=False)
 
-    def assertOLXIsPublished(self, block_list):
+    def assertOLXIsPublishedOnly(self, block_list):
         """
-        Check that all blocks in the list are published blocks in the OLX format when the course is exported.
+        Check that all blocks in the list are only published blocks in the OLX format when the course is exported.
         """
-        self._assertOLXBase(block_list, draft=False)
+        self._assertOLXBase(block_list, draft=False, published=True)
+
+    def assertOLXIsDraftAndPublished(self, block_list):
+        """
+        Check that all blocks in the list are both draft and published in the OLX format when the course is exported.
+        """
+        self._assertOLXBase(block_list, draft=True, published=True)
 
     def assertOLXIsDeleted(self, block_list):
         """
@@ -659,8 +672,8 @@ class ElementalPublishingTests(UniversalTestProcedure):
                 ('sequential', 'sequential03'),
             )
             block_list_draft = self.all_verticals + self.all_units
-            self.assertOLXIsPublished(block_list_autopublished)
-            self.assertOLXIsDraft(block_list_draft)
+            self.assertOLXIsPublishedOnly(block_list_autopublished)
+            self.assertOLXIsDraftOnly(block_list_draft)
 
     @ddt.data(DRAFT_MODULESTORE_SETUP, MongoModulestoreBuilder())
     def test_publish_old_mongo_unit(self, modulestore_builder):
@@ -714,17 +727,17 @@ class ElementalPublishingTests(UniversalTestProcedure):
             )
 
             # Ensure that both groups of verticals and children are drafts in the exported OLX.
-            self.assertOLXIsDraft(block_list_publish)
-            self.assertOLXIsDraft(block_list_untouched)
+            self.assertOLXIsDraftOnly(block_list_publish)
+            self.assertOLXIsDraftOnly(block_list_untouched)
 
             # Publish both vertical03 and vertical 04.
             self.publish('vertical', 'vertical03')
             self.publish('vertical', 'vertical04')
 
             # Ensure that the published verticals and children are indeed published in the exported OLX.
-            self.assertOLXIsPublished(block_list_publish)
+            self.assertOLXIsPublishedOnly(block_list_publish)
             # Ensure that the untouched vertical and children are still untouched.
-            self.assertOLXIsDraft(block_list_untouched)
+            self.assertOLXIsDraftOnly(block_list_untouched)
 
     @ddt.data(*MODULESTORE_SETUPS)
     def test_publish_single_sequential(self, modulestore_builder):
@@ -746,15 +759,15 @@ class ElementalPublishingTests(UniversalTestProcedure):
                 ('html', 'unit03'),
             )
             # Ensure that the autopublished sequential exists as such in the exported OLX.
-            self.assertOLXIsPublished(block_list_autopublished)
+            self.assertOLXIsPublishedOnly(block_list_autopublished)
             # Ensure that the verticals and their children are drafts in the exported OLX.
-            self.assertOLXIsDraft(block_list)
+            self.assertOLXIsDraftOnly(block_list)
             # Publish the sequential block.
             self.publish('sequential', 'sequential00')
             # Ensure that the sequential is still published in the exported OLX.
-            self.assertOLXIsPublished(block_list_autopublished)
+            self.assertOLXIsPublishedOnly(block_list_autopublished)
             # Ensure that the verticals and their children are published in the exported OLX.
-            self.assertOLXIsPublished(block_list)
+            self.assertOLXIsPublishedOnly(block_list)
 
     @ddt.data(*MODULESTORE_SETUPS)
     def test_publish_single_chapter(self, modulestore_builder):
@@ -795,18 +808,18 @@ class ElementalPublishingTests(UniversalTestProcedure):
                 ('html', 'unit15'),
             )
             # Ensure that the autopublished chapter exists as such in the exported OLX.
-            self.assertOLXIsPublished(block_list_autopublished)
+            self.assertOLXIsPublishedOnly(block_list_autopublished)
             # Ensure that the verticals and their children are drafts in the exported OLX.
-            self.assertOLXIsDraft(block_list_published)
-            self.assertOLXIsDraft(block_list_untouched)
+            self.assertOLXIsDraftOnly(block_list_published)
+            self.assertOLXIsDraftOnly(block_list_untouched)
             # Publish the chapter block.
             self.publish('chapter', 'chapter00')
             # Ensure that the chapter is still published in the exported OLX.
-            self.assertOLXIsPublished(block_list_autopublished)
+            self.assertOLXIsPublishedOnly(block_list_autopublished)
             # Ensure that the vertical and its children are published in the exported OLX.
-            self.assertOLXIsPublished(block_list_published)
+            self.assertOLXIsPublishedOnly(block_list_published)
             # Ensure that the other vertical and children are not published.
-            self.assertOLXIsDraft(block_list_untouched)
+            self.assertOLXIsDraftOnly(block_list_untouched)
 
 
 @ddt.ddt
@@ -815,6 +828,75 @@ class ElementalUnpublishingTests(UniversalTestProcedure):
     Tests for the unpublish() operation.
     """
     @ddt.data(*MODULESTORE_SETUPS)
+    def test_unpublish_draft_unit(self, modulestore_builder):
+        with self._setup_test(modulestore_builder, self.course_key):
+
+            block_list_to_unpublish = (
+                ('html', 'unit08'),
+            )
+            # The unit is a draft.
+            self.assertOLXIsDraftOnly(block_list_to_unpublish)
+            # Since there's no published version, attempting an unpublish throws an exception.
+            with self.assertRaises(ItemNotFoundError):
+                self.unpublish('html', 'unit08')
+
+    @ddt.data(DRAFT_MODULESTORE_SETUP, MongoModulestoreBuilder())
+    def test_unpublish_old_mongo_published_units(self, modulestore_builder):
+        with self._setup_test(modulestore_builder, self.course_key):
+
+            block_list_to_unpublish = (
+                ('html', 'unit08'),
+                ('html', 'unit09'),
+            )
+            block_list_parent = (
+                ('vertical', 'vertical04'),
+            )
+            # The units are drafts.
+            self.assertOLXIsDraftOnly(block_list_to_unpublish)
+            self.assertOLXIsDraftOnly(block_list_parent)
+            # Publish the *parent* of the units, which also publishes the units.
+            self.publish('vertical', 'vertical04')
+            # The units are now published.
+            self.assertOLXIsPublishedOnly(block_list_parent)
+            self.assertOLXIsPublishedOnly(block_list_to_unpublish)
+            # Unpublish the child units.
+            self.unpublish('html', 'unit08')
+            self.unpublish('html', 'unit09')
+            # The units are now drafts again.
+            self.assertOLXIsDraftOnly(block_list_to_unpublish)
+            # The parent remains published only.
+            # NOTE: This differs from Split!!
+            self.assertOLXIsPublishedOnly(block_list_parent)
+
+    @ddt.data(SPLIT_MODULESTORE_SETUP)
+    def test_unpublish_split_published_units(self, modulestore_builder):
+        with self._setup_test(modulestore_builder, self.course_key):
+
+            block_list_to_unpublish = (
+                ('html', 'unit08'),
+                ('html', 'unit09'),
+            )
+            block_list_parent = (
+                ('vertical', 'vertical04'),
+            )
+            # The units are drafts.
+            self.assertOLXIsDraftOnly(block_list_to_unpublish)
+            self.assertOLXIsDraftOnly(block_list_parent)
+            # Publish the *parent* of the units, which also publishes the units.
+            self.publish('vertical', 'vertical04')
+            # The units are now published.
+            self.assertOLXIsPublishedOnly(block_list_parent)
+            self.assertOLXIsPublishedOnly(block_list_to_unpublish)
+            # Unpublish the child units.
+            self.unpublish('html', 'unit08')
+            self.unpublish('html', 'unit09')
+            # The units are now drafts again.
+            self.assertOLXIsDraftOnly(block_list_to_unpublish)
+            # The parent now has a draft *and* published item.
+            # NOTE: This differs from old Mongo!!
+            self.assertOLXIsDraftAndPublished(block_list_parent)
+
+    @ddt.data(*MODULESTORE_SETUPS)
     def test_unpublish_draft_vertical(self, modulestore_builder):
         with self._setup_test(modulestore_builder, self.course_key):
 
@@ -822,7 +904,7 @@ class ElementalUnpublishingTests(UniversalTestProcedure):
                 ('vertical', 'vertical02'),
             )
             # The vertical is a draft.
-            self.assertOLXIsDraft(block_list_to_unpublish)
+            self.assertOLXIsDraftOnly(block_list_to_unpublish)
             # Since there's no published version, attempting an unpublish throws an exception.
             with self.assertRaises(ItemNotFoundError):
                 self.unpublish('vertical', 'vertical02')
@@ -834,7 +916,7 @@ class ElementalUnpublishingTests(UniversalTestProcedure):
             block_list_to_unpublish = (
                 ('vertical', 'vertical02'),
             )
-            block_list_children_of_unpublished = (
+            block_list_unpublished_children = (
                 ('html', 'unit04'),
                 ('html', 'unit05'),
             )
@@ -853,21 +935,21 @@ class ElementalUnpublishingTests(UniversalTestProcedure):
                 ('html', 'unit15'),
             )
             # At first, no vertical or unit is published.
-            self.assertOLXIsDraft(block_list_to_unpublish)
-            self.assertOLXIsDraft(block_list_children_of_unpublished)
-            self.assertOLXIsDraft(block_list_untouched)
+            self.assertOLXIsDraftOnly(block_list_to_unpublish)
+            self.assertOLXIsDraftOnly(block_list_unpublished_children)
+            self.assertOLXIsDraftOnly(block_list_untouched)
             # Then publish a vertical.
             self.publish('vertical', 'vertical02')
             # The published vertical and its children will be published.
-            self.assertOLXIsPublished(block_list_to_unpublish)
-            self.assertOLXIsPublished(block_list_children_of_unpublished)
-            self.assertOLXIsDraft(block_list_untouched)
+            self.assertOLXIsPublishedOnly(block_list_to_unpublish)
+            self.assertOLXIsPublishedOnly(block_list_unpublished_children)
+            self.assertOLXIsDraftOnly(block_list_untouched)
             # Now, unpublish the same vertical.
             self.unpublish('vertical', 'vertical02')
             # The unpublished vertical and its children will now be a draft.
-            self.assertOLXIsDraft(block_list_to_unpublish)
-            self.assertOLXIsDraft(block_list_children_of_unpublished)
-            self.assertOLXIsDraft(block_list_untouched)
+            self.assertOLXIsDraftOnly(block_list_to_unpublish)
+            self.assertOLXIsDraftOnly(block_list_unpublished_children)
+            self.assertOLXIsDraftOnly(block_list_untouched)
 
     @ddt.data(DRAFT_MODULESTORE_SETUP, MongoModulestoreBuilder())
     def test_unpublish_old_mongo_draft_sequential(self, modulestore_builder):
@@ -888,7 +970,7 @@ class ElementalUnpublishingTests(UniversalTestProcedure):
             block_list_to_unpublish = (
                 ('sequential', 'sequential03'),
             )
-            block_list_children_of_unpublished = (
+            block_list_unpublished_children = (
                 ('vertical', 'vertical06'),
                 ('vertical', 'vertical07'),
                 ('html', 'unit12'),
@@ -897,13 +979,13 @@ class ElementalUnpublishingTests(UniversalTestProcedure):
                 ('html', 'unit15'),
             )
             # The autopublished sequential is published - its children are draft.
-            self.assertOLXIsPublished(block_list_to_unpublish)
-            self.assertOLXIsDraft(block_list_children_of_unpublished)
+            self.assertOLXIsPublishedOnly(block_list_to_unpublish)
+            self.assertOLXIsDraftOnly(block_list_unpublished_children)
             # Unpublish the sequential.
             self.unpublish('sequential', 'sequential03')
             # Since the sequential was autopublished, a draft version of the sequential never existed.
             # So unpublishing the sequential doesn't make it a draft - it deletes it!
             self.assertOLXIsDeleted(block_list_to_unpublish)
             # Its children are orphaned and remain as drafts.
-            self.assertOLXIsDraft(block_list_children_of_unpublished)
+            self.assertOLXIsDraftOnly(block_list_unpublished_children)
 
