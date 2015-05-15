@@ -242,6 +242,11 @@
             // Install event handlers
             $( "#webcam_reset_button", this.el ).on( 'click', _.bind( this.reset, this ) );
             $( "#webcam_capture_button", this.el ).on( 'click', _.bind( this.capture, this ) );
+            $("#webcam_capture_button").keyup(function(event){
+                if(event.keyCode == 13){
+                        $("#webcam_capture_button").click();
+                    }
+                });
 
             // Show the capture button
             $( "#webcam_capture_button", this.el ).removeClass('is-hidden');
