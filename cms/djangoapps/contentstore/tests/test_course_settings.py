@@ -133,7 +133,7 @@ class CourseDetailsTestCase(CourseTestCase):
             self.assertContains(response, "Enrollment End Date")
             self.assertContains(response, "not the dates shown on your course summary page")
 
-            self.assertContains(response, "Course Introduction Page")
+            self.assertContains(response, "Introducing Your Course")
             self.assertContains(response, "Course Image")
             self.assertContains(response, "Course Short Description")
             self.assertNotContains(response, "Course Overview")
@@ -260,7 +260,7 @@ class CourseDetailsTestCase(CourseTestCase):
             self.assertContains(response, "Enrollment End Date")
             self.assertNotContains(response, "not the dates shown on your course summary page")
 
-            self.assertContains(response, "Course Introduction Page")
+            self.assertContains(response, "Introducing Your Course")
             self.assertContains(response, "Course Image")
             self.assertContains(response, "Course Short Description")
             self.assertContains(response, "Course Overview")
