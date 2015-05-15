@@ -63,7 +63,7 @@ class CourseViewType(object):
     name = None
     title = None
     view_name = None
-    is_persistent = True
+    is_persistent = False
 
     # The course field that indicates that this feature is enabled
     feature_flag_field_name = None

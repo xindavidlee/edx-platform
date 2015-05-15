@@ -1050,7 +1050,7 @@ def _refresh_course_tabs(request, course_module):
 
     # Additionally update any persistent tabs provided by course views
     for tab_type in CourseTabManager.get_tab_types().values():
-        if getattr(tab_type, "is_persistent", False):
+        if tab_type.is_persistent:
             tab_enabled = tab_type.is_enabled(course_module, settings, user=request.user)
             update_tab(course_tabs, tab_type, tab_enabled)
 
