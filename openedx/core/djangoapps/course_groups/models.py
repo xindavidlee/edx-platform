@@ -38,7 +38,11 @@ class CourseUserGroup(models.Model):
     # For now, only have group type 'cohort', but adding a type field to support
     # things like 'question_discussion', 'friends', 'off-line-class', etc
     COHORT = 'cohort'
-    GROUP_TYPE_CHOICES = ((COHORT, 'Cohort'),)
+    TEAM = 'team'
+    GROUP_TYPE_CHOICES = (
+        (COHORT, 'Cohort'),
+        (TEAM, 'Team'),
+    )
     group_type = models.CharField(max_length=20, choices=GROUP_TYPE_CHOICES)
 
     @classmethod
@@ -133,3 +137,44 @@ class CourseCohort(models.Model):
         )
 
         return course_cohort
+
+
+class CourseTeam(models.Model):
+    """
+    This model represents team related info.
+    """
+    course_user_group = models.OneToOneField(CourseUserGroup, unique=True, related_name='team')
+
+    description = models.CharField(max_length=1000)
+    country = models.CharField(max_length=50, blank=True)
+    language = models.CharField(max_length=20, blank=True)
+    topic_id = models.CharField(max_length=100, db_index=True)
+
+    @classmethod
+    def create(cls, team_name, course_id, description, topic_id, course_user_group=None, country=None, language=None):
+        """
+        Create a complete (CourseUserGroup + CourseTeam) object.
+
+        Args:
+            team_name: Name of the team to be created
+            course_id: Course id
+            description: Description of the team
+            topic_id: Identifier for the topic the team formed around
+            course_user_group: CourseUserGroup
+            country: Country where the team is based
+            language: Language the team uses
+        """
+        if course_user_group is None:
+            course_user_group, __ = CourseUserGroup.create(team_name, course_id, group_type=CourseUserGroup.TEAM)
+
+        course_team, __ = cls.objects.get_or_create(
+            course_user_group=course_user_group,
+            defaults={
+                'description': description,
+                'topic_id': topic_id,
+                'country': country,
+                'language': language
+            }
+        )
+
+        return course_team
