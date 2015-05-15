@@ -11,6 +11,7 @@ function(Backbone, Signatory, SignatoryCollection, _, str, gettext) {
         defaults: {
             name: 'Name of the certificate',
             description: 'Description of the certificate',
+            course_title: 'Title of the course',
             version: 1
         },
 

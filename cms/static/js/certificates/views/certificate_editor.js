@@ -10,6 +10,7 @@ function(ListItemEditorView, Signatory, SignatoryEditor, _, $, gettext) {
         events: {
             'change .collection-name-input': 'setName',
             'change .certificate-description-input': 'setDescription',
+            'change .certificate-course-title-input': 'setCourseTitle',
             'focus .input-text': 'onFocus',
             'blur .input-text': 'onBlur',
             'submit': 'setAndClose',
@@ -89,6 +90,7 @@ function(ListItemEditorView, Signatory, SignatoryEditor, _, $, gettext) {
                 uniqueId: _.uniqueId(),
                 name: this.model.escape('name'),
                 description: this.model.escape('description'),
+                course_title: this.model.escape('course_title'),
                 isNew: this.model.isNew()
             };
         },
@@ -117,10 +119,21 @@ function(ListItemEditorView, Signatory, SignatoryEditor, _, $, gettext) {
             );
         },
 
+        setCourseTitle: function(event) {
+            // Updates the indicated model field (still requires persistence on server)
+            if (event && event.preventDefault) { event.preventDefault(); }
+            this.model.set(
+                'course_title',
+                this.$('.certificate-course-title-input').val(),
+                { silent: true }
+            );
+        },
+
         setValues: function() {
             // Update the specified values in the local model instance
             this.setName();
             this.setDescription();
+            this.setCourseTitle();
             return this;
         }
     });
