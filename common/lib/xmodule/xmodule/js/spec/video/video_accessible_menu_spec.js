@@ -42,9 +42,6 @@
                     expect(activeMenuItem.children('.action'))
                         .toHaveData('value', 'srt');
 
-                    // expect(activeMenuItem.children('.action'))
-                    //     .toHaveHtml('SubRip (.srt) file');
-
                     /* TO DO: Check that all the anchors contain correct text.
                     $.each(li.toArray().reverse(), function (index, link) {
                         expect($(link)).toHaveData(
@@ -118,7 +115,7 @@
                     spyOn($.fn, 'focus').andCallThrough();
                 });
 
-                it('open the menu on click', function () {
+                it('opens the menu on click', function () {
                     button.click();
                     expect(button).toHaveClass('is-active');
                     expect(menuList).toHaveClass('is-visible');
@@ -127,29 +124,34 @@
                 if('close the menu on outside click', function() {
                     $(window).click();
                     expect(menuList).not.toHaveClass('is-visible');
+                    expect(button).not.toHaveClass('is-active');
                 });
 
-                    it('open the menu on ENTER keydown', function () {
+                it('open the menu on ENTER keydown', function () {
                     container.trigger(keyPressEvent(KEY.ENTER));
                     expect(container).toHaveClass('is-visible');
+                    expect(button).toHaveClass('is-active');
                     expect(menuItemsLinks.last().focus).toHaveBeenCalled();
                 });
 
                 it('open the menu on SPACE keydown', function () {
                     container.trigger(keyPressEvent(KEY.SPACE));
                     expect(container).toHaveClass('is-visible');
+                    expect(button).toHaveClass('is-active');
                     expect(menuItemsLinks.last().focus).toHaveBeenCalled();
                 });
 
                 it('open the menu on UP keydown', function () {
                     container.trigger(keyPressEvent(KEY.UP));
                     expect(container).toHaveClass('is-visible');
+                    expect(button).toHaveClass('is-active');
                     expect(menuItemsLinks.last().focus).toHaveBeenCalled();
                 });
 
                 it('close the menu on ESCAPE keydown', function () {
                     container.trigger(keyPressEvent(KEY.ESCAPE));
                     expect(container).not.toHaveClass('is-visible');
+                    expect(button).not.toHaveClass('is-active');
                 });
 
                 it('UP and DOWN keydown function as expected on menu items',

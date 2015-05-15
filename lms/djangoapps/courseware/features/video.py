@@ -607,16 +607,7 @@ def select_transcript_format(_step, format):
     height = button._element.location_once_scrolled_into_view['y']
     world.browser.driver.execute_script("window.scrollTo(0, {});".format(height))
 
-    # Markup no longer functions on hover, rather on click
-    # Commenting out for now; need to update or remove.
-
-    # button.mouse_over()
     button.click()
-
-    # Button no longer uses '...', this seems fragile anyway
-    # Commenting out for now; need to update or remove.
-
-    # assert world.css_has_text(button_selector, '...', strip=True)
 
     menu_items = world.css_find(menu_selector + ' a')
     for item in menu_items:
