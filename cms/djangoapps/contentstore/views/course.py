@@ -704,6 +704,9 @@ def create_new_course_in_store(store, user, org, number, run, fields):
     definition_data = {'wiki_slug': wiki_slug}
     fields.update(definition_data)
 
+    # Set default language from settings
+    fields.update({'language': getattr(settings, 'DEFAULT_COURSE_LANGUAGE', 'en')})
+
     with modulestore().default_store(store):
         # Creating the course raises DuplicateCourseError if an existing course with this org/name is found
         new_course = modulestore().create_course(

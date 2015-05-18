@@ -34,8 +34,6 @@ CATALOG_VISIBILITY_CATALOG_AND_ABOUT = "both"
 CATALOG_VISIBILITY_ABOUT = "about"
 CATALOG_VISIBILITY_NONE = "none"
 
-DEFAULT_COURSE_LANGUAGE = getattr(settings, "DEFAULT_COURSE_LANGUAGE", "en")
-
 
 class StringOrDate(Date):
     def from_json(self, value):
@@ -851,7 +849,7 @@ class CourseFields(object):
     language = String(
         display_name=_("Course Language"),
         help=_("Specify the language of your course."),
-        default=DEFAULT_COURSE_LANGUAGE,
+        default=None,
         scope=Scope.settings
     )
 

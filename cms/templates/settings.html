@@ -209,7 +209,7 @@ CMS.URL.UPLOAD_ASSET = '${upload_asset_url}';
             <li class="field" id="field-course-language">
               <label for="course-language">${_("Course Language")}</label>
               <select id="course-language">
-                <option disabled selected></option>
+                <option value="" selected> - </option>
                 % for lang, label in language_options:
                   <option value="${lang}">${label}</option>
                 % endfor
