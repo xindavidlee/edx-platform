@@ -1,10 +1,10 @@
 """Views for the branding app. """
 import logging
-import os
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404
+from django.utils import translation
 from staticfiles.storage import staticfiles_storage
 from django.shortcuts import redirect
 from django_future.csrf import ensure_csrf_cookie
@@ -164,11 +164,7 @@ def _send_footer_static(request, name):
     # files directly from this location.
     # In development, however, we don't run collectstatic, so
     # we need to find the files in this repository.
-    path = (
-        os.path.join(settings.SENDFILE_ROOT, name) if settings.DEBUG
-        else staticfiles_storage.path(name)
-    )
-
+    path = staticfiles_storage.path(name)
     if path is None:
         raise Http404
 
@@ -177,7 +173,8 @@ def _send_footer_static(request, name):
 
 # TODO: make these settings
 FOOTER_JS_STATIC_NAME = "js/footer-edx.js"
-FOOTER_CSS_STATIC_NAME = "sass/lms-footer-edx.css"
+FOOTER_LTR_CSS_STATIC_NAME = "css/lms-footer-edx.css"
+FOOTER_RTL_CSS_STATIC_NAME = "css/lms-footer-edx-rtl.css"
 
 
 def footer(request, extension="json"):
@@ -257,10 +254,24 @@ def footer(request, extension="json"):
             </body>
         </html>
 
+
+    Example: Retrieving the footer in a particular language
+
+    GET /api/branding/v1/footer?language=ar
+    The returned response will use Arabic translation strings
+
+    GET /api/branding/v1/footer.css?language=ar
+    The returned CSS will use right-to-left styling.
+
     """
-    # If configuration is not enabled then return 404
+    # Feature flag enables this end-point
     if not BrandingApiConfig.current().enabled:
         raise Http404
+
+    # Override the language if necessary
+    language = request.GET.get('language')
+    if language is not None:
+        translation.activate(language)
 
     # Render the footer information based on the extension
     if extension == "json":
@@ -270,7 +281,11 @@ def footer(request, extension="json"):
         content = _render_footer_html()
         return HttpResponse(content, status=200)
     elif extension == "css":
-        return _send_footer_static(request, FOOTER_CSS_STATIC_NAME)
+        css_name = (
+            FOOTER_RTL_CSS_STATIC_NAME if translation.get_language_bidi()
+            else FOOTER_LTR_CSS_STATIC_NAME
+        )
+        return _send_footer_static(request, css_name)
     elif extension == "js":
         return _send_footer_static(request, FOOTER_JS_STATIC_NAME)
     else:
