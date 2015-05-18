@@ -236,21 +236,27 @@ class UserCourseEnrollmentsList(generics.ListAPIView):
     lookup_field = 'username'
 
     def get_queryset(self):
-        dbtype = 'with if clause'
-        os.system('echo "debugging version: ' + dbtype + '" >> /edx/app/edxapp/edx-platform/test.log')
+
+        db_version = 'with if clause'
+        db_str = 'debugging version: ' + db_version + '\n'
+        db_start_all = time.time()
+
         enrollments = self.queryset.filter(
             user__username=self.kwargs['username'],
             is_active=True
         ).order_by('created').reverse()
-        t1 = time.time()
+
+        db_start_calc_x = time.time()
         x = [
             enrollment for enrollment in enrollments
             if enrollment.course and is_mobile_available_for_user(self.request.user, enrollment.course)
         ]
-        dbstr = 'time to calculate x: ' + str(time.time() - t1)
-        os.system('echo "' + dbstr + '" >> /edx/app/edxapp/edx-platform/test.log')
-        return x
+        db_str += 'number of enrollments: ' + str(len(x))
+        db_str += 'time to calculate x: ' + str(time.time() - db_start_calc_x) + '\n'
 
+        db_str += 'time for entire method: ' + str(time.time() - db_start_all) + '\n\n'
+        os.system('echo "' + db_str + '" >> /edx/app/edxapp/edx-platform/test.log')
+        return x
 
 @api_view(["GET"])
 @mobile_view()
