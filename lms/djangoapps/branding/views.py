@@ -1,11 +1,11 @@
 """Views for the branding app. """
 import logging
+import os
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404
 from staticfiles.storage import staticfiles_storage
-from staticfiles.finders import find as staticfiles_find
 from django.shortcuts import redirect
 from django_future.csrf import ensure_csrf_cookie
 from sendfile import sendfile
@@ -121,7 +121,7 @@ def _render_footer_html():
     # as context to ensure that these are rendered consistently.
     # TODO: use v3 of the footer for edx.org (waiting on Alasdair's changes).
     return (
-        render_to_response("footer-edx-new.html")
+        render_to_response("footer-edx-v3.html")
         if settings.FEATURES.get("IS_EDX_DOMAIN", False)
         else render_to_response("footer.html")
     )
@@ -165,7 +165,7 @@ def _send_footer_static(request, name):
     # In development, however, we don't run collectstatic, so
     # we need to find the files in this repository.
     path = (
-        staticfiles_find(name) if settings.DEBUG
+        os.path.join(settings.SENDFILE_ROOT, name) if settings.DEBUG
         else staticfiles_storage.path(name)
     )
 
@@ -176,10 +176,8 @@ def _send_footer_static(request, name):
 
 
 # TODO: make these settings
-# TODO: update the paths when Alasdair's changes are merged
-# and delete the dummy JS / CSS.
-FOOTER_JS_STATIC_NAME = "footer.js"  # "js/footer_edx.js"
-FOOTER_CSS_STATIC_NAME = "footer.css"  # "css/lms-style-edx-footer.css"
+FOOTER_JS_STATIC_NAME = "js/footer-edx.js"
+FOOTER_CSS_STATIC_NAME = "sass/lms-footer-edx.css"
 
 
 def footer(request, extension="json"):

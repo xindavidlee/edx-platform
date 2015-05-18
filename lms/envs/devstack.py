@@ -81,6 +81,8 @@ PIPELINE_SASS_ARGUMENTS = '--debug-info --require {proj_dir}/static/sass/bourbon
 # In production, we'll use nginx to serve the files for us,
 # but devstack doesn't run nginx.
 # See https://github.com/johnsensible/django-sendfile
+SENDFILE_ROOT = PROJECT_ROOT / "static"
+SENDFILE_URL = STATIC_URL
 SENDFILE_BACKEND = "sendfile.backends.development"
 
 ########################### VERIFIED CERTIFICATES #################################
