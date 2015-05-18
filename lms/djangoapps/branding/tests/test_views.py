@@ -1,6 +1,6 @@
 # encoding: utf-8
 """Tests of Branding API views. """
-
+import os
 import contextlib
 import json
 from django.test import TestCase
@@ -17,6 +17,47 @@ from branding.models import BrandingApiConfig
 class TestFooter(TestCase):
     """Test API end-point for retrieving the footer. """
 
+    # We don't collect static files for unit tests,
+    # so the files we expect to exist won't.
+    # For testing purposes, we create the files as part
+    # of this test.  This has two advantages:
+    #
+    # 1) It's fast.
+    # 2) We can easily check which file was used.
+    #
+    # To achieve (2), we write the file path as the
+    # content of the file.
+    #
+    FAKE_STATIC_FILES = [
+        (settings.STATIC_ROOT / name).abspath()
+        for name in [
+            settings.FOOTER_JS_STATIC_NAME,
+            settings.FOOTER_LTR_CSS_STATIC_NAME,
+            settings.FOOTER_RTL_CSS_STATIC_NAME,
+        ]
+    ]
+
+    @classmethod
+    def setUpClass(cls):
+        """Create the fake static files. """
+        # Ensure that the static files directory exists
+        os.makedirs((settings.STATIC_ROOT / "js").abspath())
+        os.makedirs((settings.STATIC_ROOT / "css").abspath())
+
+        # Create the fake static files
+        # The content of each file is just the path to the file,
+        # so we can check this in the response we receive
+        # from the server.
+        for path in cls.FAKE_STATIC_FILES:
+            with open(path, "w") as static_file:
+                static_file.write(path)
+
+    @classmethod
+    def tearDownClass(cls):
+        """Remove the fake static files we created. """
+        for path in cls.FAKE_STATIC_FILES:
+            os.remove(path)
+
     def setUp(self):
         """Clear the configuration cache. """
         super(TestFooter, self).setUp()
@@ -30,25 +71,32 @@ class TestFooter(TestCase):
 
     @ddt.data(
         # Open source version
-        (False, "", "application/json; charset=utf-8"),
-        (False, "css", "text/css"),
-        (False, "js", "text/javascript"),
-        (False, "html", "text/html; charset=utf-8"),
+        (False, "", "application/json; charset=utf-8", "Open edX"),
+        (False, "css", "text/css", settings.FOOTER_LTR_CSS_STATIC_NAME),
+        (False, "js", "text/javascript", settings.FOOTER_JS_STATIC_NAME),
+        (False, "html", "text/html; charset=utf-8", "Open edX"),
 
         # EdX.org version
-        (True, "", "application/json; charset=utf-8"),
-        (True, "css", "text/css"),
-        (True, "js", "text/javascript"),
-        (True, "html", "text/html; charset=utf-8"),
+        (True, "", "application/json; charset=utf-8", "edX Inc"),
+        (True, "css", "text/css", settings.FOOTER_LTR_CSS_STATIC_NAME),
+        (True, "js", "text/javascript", settings.FOOTER_JS_STATIC_NAME),
+        (True, "html", "text/html; charset=utf-8", "edX Inc"),
     )
     @ddt.unpack
-    def test_footer_content_types(self, is_edx_domain, extension, content_type):
+    def test_footer_content_types(self, is_edx_domain, extension, content_type, content):
         self._set_feature_flag(True)
         with self._set_is_edx_domain(is_edx_domain):
             resp = self._get_footer(extension=extension)
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], content_type)
+
+        # Check that the response contains the expected content.
+        # For rendered content (HTML / json), we just check for some string
+        # that we expect to be in the output.  For static files (CSS / JS)
+        # we check for the path that we wrote to the file when creating
+        # the test fixtures.
+        self.assertIn(content, resp.content)
 
     @mock.patch.dict(settings.FEATURES, {'ENABLE_FOOTER_MOBILE_APP_LINKS': True})
     @ddt.data(True, False)
@@ -96,16 +144,53 @@ class TestFooter(TestCase):
         # Copyright
         self.assertIn("copyright", json_data)
 
+    @ddt.data(
+        ("en", "registered trademarks"),
+        ("eo", u"régïstéréd trädémärks"),  # Dummy language string
+        ("unknown", "registered trademarks"),  # default to English
+    )
+    @ddt.unpack
+    def test_language_override_translation(self, language, expected_copyright):
+        self._set_feature_flag(True)
+
+        # Load the footer with the specified language
+        resp = self._get_footer(language=language)
+        self.assertEqual(resp.status_code, 200)
+        json_data = json.loads(resp.content)
+
+        # Verify that the translation occurred
+        self.assertIn(expected_copyright, json_data['copyright'])
+
+    @ddt.data(
+        ("en", settings.FOOTER_LTR_CSS_STATIC_NAME),
+        ("ar", settings.FOOTER_RTL_CSS_STATIC_NAME),
+    )
+    @ddt.unpack
+    def test_language_rtl(self, language, static_path):
+        self._set_feature_flag(True)
+        resp = self._get_footer(extension="css", language=language)
+        self.assertEqual(resp.status_code, 200)
+
+        # Check that the static path is in the content of the response.
+        # (we wrote the path into the files when creating them in
+        # the test setup).
+        self.assertIn(static_path, resp.content)
+
     def _set_feature_flag(self, enabled):
         """Enable or disable the feature flag for the branding API end-points. """
         config = BrandingApiConfig(enabled=enabled)
         config.save()
 
-    def _get_footer(self, extension=""):
+    def _get_footer(self, extension="", language=None):
         """Retrieve the footer. """
         url = reverse("branding_footer")
+
         if extension:
             url = u"{url}.{ext}".format(url=url, ext=extension)
+
+        if language is not None:
+            url = u"{url}?language={lang}".format(url=url, lang=language)
+
         return self.client.get(url)
 
     @contextlib.contextmanager

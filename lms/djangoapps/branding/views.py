@@ -171,12 +171,6 @@ def _send_footer_static(request, name):
     return sendfile(request, path)
 
 
-# TODO: make these settings
-FOOTER_JS_STATIC_NAME = "js/footer-edx.js"
-FOOTER_LTR_CSS_STATIC_NAME = "css/lms-footer-edx.css"
-FOOTER_RTL_CSS_STATIC_NAME = "css/lms-footer-edx-rtl.css"
-
-
 def footer(request, extension="json"):
     """Retrieve the branded footer.
 
@@ -282,11 +276,11 @@ def footer(request, extension="json"):
         return HttpResponse(content, status=200)
     elif extension == "css":
         css_name = (
-            FOOTER_RTL_CSS_STATIC_NAME if translation.get_language_bidi()
-            else FOOTER_LTR_CSS_STATIC_NAME
+            settings.FOOTER_RTL_CSS_STATIC_NAME if translation.get_language_bidi()
+            else settings.FOOTER_LTR_CSS_STATIC_NAME
         )
         return _send_footer_static(request, css_name)
     elif extension == "js":
-        return _send_footer_static(request, FOOTER_JS_STATIC_NAME)
+        return _send_footer_static(request, settings.FOOTER_JS_STATIC_NAME)
     else:
         raise Http404

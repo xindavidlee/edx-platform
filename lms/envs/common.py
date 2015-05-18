@@ -1175,7 +1175,6 @@ dashboard_js = (
 )
 discussion_js = sorted(rooted_glob(COMMON_ROOT / 'static', 'coffee/src/discussion/**/*.js'))
 rwd_header_footer_js = sorted(rooted_glob(PROJECT_ROOT / 'static', 'js/common_helpers/rwd_header_footer.js'))
-footer_edx_js = sorted(rooted_glob(PROJECT_ROOT / 'static', 'js/footer-edx.js'))
 staff_grading_js = sorted(rooted_glob(PROJECT_ROOT / 'static', 'coffee/src/staff_grading/**/*.js'))
 open_ended_js = sorted(rooted_glob(PROJECT_ROOT / 'static', 'coffee/src/open_ended/**/*.js'))
 notes_js = sorted(rooted_glob(PROJECT_ROOT / 'static', 'coffee/src/notes/**/*.js'))
@@ -1252,6 +1251,13 @@ reverify_js = [
 
 ccx_js = sorted(rooted_glob(PROJECT_ROOT / 'static', 'js/ccx/**/*.js'))
 
+# Constants for the footer static assets.
+# These are referred to both by the Django asset pipeline
+# AND by the branding footer API, which uses an internal
+# redirect to serve these files.
+FOOTER_JS_STATIC_NAME = "js/footer-edx.js"
+FOOTER_LTR_CSS_STATIC_NAME = "css/lms-footer-edx.css"
+FOOTER_RTL_CSS_STATIC_NAME = "css/lms-footer-edx-rtl.css"
 
 PIPELINE_CSS = {
     'style-vendor': {
@@ -1336,13 +1342,13 @@ PIPELINE_CSS = {
         'source_filenames': [
             'sass/lms-footer-edx.css',
         ],
-        'output_filename': 'css/lms-footer-edx.css',
+        'output_filename': FOOTER_LTR_CSS_STATIC_NAME,
     },
     'style-edx-footer-rtl': {
         'source_filenames': [
             'sass/lms-footer-edx-rtl.css',
         ],
-        'output_filename': 'css/lms-footer-edx-rtl.css',
+        'output_filename': FOOTER_RTL_CSS_STATIC_NAME,
     },
 }
 
@@ -1438,8 +1444,8 @@ PIPELINE_JS = {
         'output_filename': 'js/ccx.js'
     },
     'footer_edx': {
-        'source_filenames': footer_edx_js,
-        'output_filename': 'js/footer_edx.js'
+        'source_filenames': ['js/footer-edx.js'],
+        'output_filename': FOOTER_JS_STATIC_NAME,
     }
 }
 
