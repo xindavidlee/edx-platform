@@ -1,5 +1,7 @@
+"""
+Serializer file for Bookmarks.
+"""
 from rest_framework import serializers
-from openedx.core.djangoapps.user_api.serializers import ReadOnlyFieldsSerializerMixin
 
 from .models import Bookmark
 
@@ -8,14 +10,18 @@ class BookmarkSerializer(serializers.ModelSerializer):
     """
     Class that serializes the Bookmark model.
     """
-    # def __init__(self, *args, **kwargs):
-    #     fields_to_remove = kwargs.pop('fields_to_remove', None)
-    #     super(BookmarkSerializer, self).__init__(*args, **kwargs)
-    #
-    #     if fields_to_remove:
-    #         # for multiple fields in a list
-    #         for field_name in fields_to_remove:
-    #             self.fields.pop(field_name)
+    def __init__(self, *args, **kwargs):
+        # Don't pass the 'fields' arg up to the superclass
+        fields = kwargs['context'].pop('fields', [])
+        # Instantiate the superclass normally
+        super(BookmarkSerializer, self).__init__(*args, **kwargs)
+
+        if fields:
+            # Drop any fields that are not specified in the `fields` argument.
+            allowed = set(fields)
+            existing = set(self.fields.keys())
+            for field_name in existing - allowed:
+                self.fields.pop(field_name)
 
     id = serializers.SerializerMethodField('get_id')
     path = serializers.Field(source='path')
