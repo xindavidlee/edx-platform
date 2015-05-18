@@ -32,37 +32,37 @@ class TestPaverBokChoyCmd(unittest.TestCase):
             shard_str='/shard_' + shard if shard else '',
             exp_text=name,
         )
-        return expected_statement.strip()
+        return expected_statement
 
     def test_default(self):
         suite = BokChoyTestSuite('')
         name = 'tests'
-        self.assertEqual(suite.cmd.strip(), self._expected_command(name=name))
+        self.assertEqual(suite.cmd, self._expected_command(name=name))
 
     def test_suite_spec(self):
         spec = 'test_foo.py'
         suite = BokChoyTestSuite('', test_spec=spec)
         name = 'tests/{}'.format(spec)
-        self.assertEqual(suite.cmd.strip(), self._expected_command(name=name))
+        self.assertEqual(suite.cmd, self._expected_command(name=name))
 
     def test_class_spec(self):
         spec = 'test_foo.py:FooTest'
         suite = BokChoyTestSuite('', test_spec=spec)
         name = 'tests/{}'.format(spec)
-        self.assertEqual(suite.cmd.strip(), self._expected_command(name=name))
+        self.assertEqual(suite.cmd, self._expected_command(name=name))
 
     def test_testcase_spec(self):
         spec = 'test_foo.py:FooTest.test_bar'
         suite = BokChoyTestSuite('', test_spec=spec)
         name = 'tests/{}'.format(spec)
-        self.assertEqual(suite.cmd.strip(), self._expected_command(name=name))
+        self.assertEqual(suite.cmd, self._expected_command(name=name))
 
     def test_spec_with_draft_default_store(self):
         spec = 'test_foo.py'
         suite = BokChoyTestSuite('', test_spec=spec, default_store='draft')
         name = 'tests/{}'.format(spec)
         self.assertEqual(
-            suite.cmd.strip(),
+            suite.cmd,
             self._expected_command(name=name, store='draft')
         )
 
@@ -71,18 +71,18 @@ class TestPaverBokChoyCmd(unittest.TestCase):
         suite = BokChoyTestSuite('', default_store='invalid')
         name = 'tests'
         self.assertEqual(
-            suite.cmd.strip(),
+            suite.cmd,
             self._expected_command(name=name, store='invalid')
         )
 
     def test_serversonly(self):
         suite = BokChoyTestSuite('', serversonly=True)
-        self.assertEqual(suite.cmd.strip(), "")
+        self.assertEqual(suite.cmd, "")
 
     def test_test_dir(self):
         test_dir = 'foo'
         suite = BokChoyTestSuite('', test_dir=test_dir)
         self.assertEqual(
-            suite.cmd.strip(),
+            suite.cmd,
             self._expected_command(name=test_dir)
         )
