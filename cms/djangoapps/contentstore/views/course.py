@@ -24,13 +24,12 @@ from xmodule.error_module import ErrorDescriptor
 from xmodule.modulestore.django import modulestore
 from xmodule.contentstore.content import StaticContent
 from xmodule.tabs import PDFTextbookTabs, CourseTab, CourseTabManager
-from xmodule.partitions.partitions import UserPartition
 from xmodule.modulestore import EdxJSONEncoder
 from xmodule.modulestore.exceptions import ItemNotFoundError, DuplicateCourseError
 from opaque_keys import InvalidKeyError
 from opaque_keys.edx.locations import Location
 from opaque_keys.edx.keys import CourseKey
-from openedx.core.djangoapps.plugins.api import CourseViewType
+from openedx.core.lib.plugins.api import CourseViewType
 
 from django_future.csrf import ensure_csrf_cookie
 from contentstore.course_info_model import get_course_updates, update_course_updates, delete_course_update

@@ -5,7 +5,6 @@ Adds support for first class features that can be added to the edX platform.
 from stevedore.extension import ExtensionManager
 
 # Stevedore extension point namespaces
-FEATURE_NAMESPACE = 'openedx.feature'
 COURSE_VIEW_TYPE_NAMESPACE = 'openedx.course_view_type'
 
 
@@ -47,13 +46,6 @@ class PluginManager(object):
                 namespace=cls.NAMESPACE  # pylint: disable=no-member
             ))
         return plugins[name]
-
-
-class FeatureManager(PluginManager):
-    """
-    Manager for all of the edX features that have been made available.
-    """
-    NAMESPACE = FEATURE_NAMESPACE
 
 
 class CourseViewType(object):

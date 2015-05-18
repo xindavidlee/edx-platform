@@ -178,7 +178,7 @@ class CourseTab(object):
         tab_type = available_tab_types[tab_dict['type']]
         tab_type.validate(tab_dict)
         # TODO: don't import openedx capabilities from common
-        from openedx.core.djangoapps.plugins.api import CourseViewType
+        from openedx.core.lib.plugins.api import CourseViewType
         if issubclass(tab_type, CourseViewType):
             return CourseViewTab(tab_type, tab_dict=tab_dict)
         else:
@@ -217,7 +217,7 @@ class CourseTabManager(object):
 
             # Add any registered course views
             # TODO: don't import openedx capabilities from common
-            from openedx.core.djangoapps.plugins.api import CourseViewTypeManager
+            from openedx.core.lib.plugins.api import CourseViewTypeManager
             for course_view_type in CourseViewTypeManager.get_available_plugins().values():
                 tab_types[course_view_type.name] = course_view_type
 

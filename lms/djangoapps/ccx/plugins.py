@@ -4,7 +4,7 @@ Registers the CCX feature for the edX platform.
 
 from django.utils.translation import ugettext as _
 
-from openedx.core.djangoapps.plugins.api import CourseViewType
+from openedx.core.lib.plugins.api import CourseViewType
 
 
 class CcxCourseViewType(CourseViewType):
