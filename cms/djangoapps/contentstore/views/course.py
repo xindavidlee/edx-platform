@@ -30,6 +30,7 @@ from xmodule.modulestore.exceptions import ItemNotFoundError, DuplicateCourseErr
 from opaque_keys import InvalidKeyError
 from opaque_keys.edx.locations import Location
 from opaque_keys.edx.keys import CourseKey
+from openedx.core.djangoapps.plugins.api import CourseViewType
 
 from django_future.csrf import ensure_csrf_cookie
 from contentstore.course_info_model import get_course_updates, update_course_updates, delete_course_update
@@ -1050,7 +1051,7 @@ def _refresh_course_tabs(request, course_module):
 
     # Additionally update any persistent tabs provided by course views
     for tab_type in CourseTabManager.get_tab_types().values():
-        if tab_type.is_persistent:
+        if issubclass(tab_type, CourseViewType) and tab_type.is_persistent:
             tab_enabled = tab_type.is_enabled(course_module, settings, user=request.user)
             update_tab(course_tabs, tab_type, tab_enabled)
 
@@ -1103,11 +1104,10 @@ def advanced_settings_handler(request, course_key_string):
                 try:
                     # validate data formats and update the course module.
                     # Note: don't update mongo yet, but wait until after any tabs are changed
-                    is_valid, errors, updated_data = CourseMetadata.validate_and_update_from_json(
+                    is_valid, errors, updated_data = CourseMetadata.validate_from_json(
                         course_module,
                         request.json,
                         user=request.user,
-                        update=False,
                     )
 
                     if is_valid:
