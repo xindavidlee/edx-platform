@@ -12,13 +12,17 @@ REPO_DIR = os.getcwd()
 class TestPaverBokChoyCmd(unittest.TestCase):
 
     def _expected_command(self, name, store=None):
+        """
+        Returns the command that is expected to be run for the given test spec
+        and store.
+        """
         shard = os.environ.get('SHARD')
         expected_statement = (
             "DEFAULT_STORE={default_store} "
             "SCREENSHOT_DIR='{repo_dir}/test_root/log{shard_str}' "
             "BOK_CHOY_HAR_DIR='{repo_dir}/test_root/log{shard_str}/hars' "
             "SELENIUM_DRIVER_LOG_DIR='{repo_dir}/test_root/log{shard_str}' "
-            "nosetests {repo_dir}/common/test/acceptance/tests{exp_text} "
+            "nosetests {repo_dir}/common/test/acceptance/{exp_text} "
             "--with-xunit "
             "--xunit-file={repo_dir}/reports/bok_choy{shard_str}/xunit.xml "
             "--verbosity=2 "
@@ -31,45 +35,54 @@ class TestPaverBokChoyCmd(unittest.TestCase):
         return expected_statement.strip()
 
     def test_default(self):
-        self.suite = BokChoyTestSuite('')
+        suite = BokChoyTestSuite('')
         name = 'tests'
-        self.assertEqual(self.suite.cmd, self._expected_command(name=name))
+        self.assertEqual(suite.cmd.strip(), self._expected_command(name=name))
 
     def test_suite_spec(self):
         spec = 'test_foo.py'
-        self.suite = BokChoyTestSuite('', test_spec=spec)
+        suite = BokChoyTestSuite('', test_spec=spec)
         name = 'tests/{}'.format(spec)
-        self.assertEqual(self.suite.cmd, self._expected_command(name=name))
+        self.assertEqual(suite.cmd.strip(), self._expected_command(name=name))
 
     def test_class_spec(self):
         spec = 'test_foo.py:FooTest'
-        self.suite = BokChoyTestSuite('', test_spec=spec)
+        suite = BokChoyTestSuite('', test_spec=spec)
         name = 'tests/{}'.format(spec)
-        self.assertEqual(self.suite.cmd, self._expected_command(name=name))
+        self.assertEqual(suite.cmd.strip(), self._expected_command(name=name))
 
     def test_testcase_spec(self):
-        spec='test_foo.py:FooTest.test_bar'
-        self.suite = BokChoyTestSuite('', test_spec=spec)
+        spec = 'test_foo.py:FooTest.test_bar'
+        suite = BokChoyTestSuite('', test_spec=spec)
         name = 'tests/{}'.format(spec)
-        self.assertEqual(self.suite.cmd, self._expected_command(name=name))
+        self.assertEqual(suite.cmd.strip(), self._expected_command(name=name))
 
     def test_spec_with_draft_default_store(self):
         spec = 'test_foo.py'
-        self.suite = BokChoyTestSuite('', test_spec=spec, default_store='draft')
+        suite = BokChoyTestSuite('', test_spec=spec, default_store='draft')
         name = 'tests/{}'.format(spec)
-        self.assertEqual(self.suite.cmd, self._expected_command(name=name, store='draft'))
+        self.assertEqual(
+            suite.cmd.strip(),
+            self._expected_command(name=name, store='draft')
+        )
 
     def test_invalid_default_store(self):
         # the cmd will dumbly compose whatever we pass in for the default_store
-        self.suite = BokChoyTestSuite('', default_store='invalid')
+        suite = BokChoyTestSuite('', default_store='invalid')
         name = 'tests'
-        self.assertEqual(self.suite.cmd, self._expected_command(name=name, store='invalid'))
+        self.assertEqual(
+            suite.cmd.strip(),
+            self._expected_command(name=name, store='invalid')
+        )
 
     def test_serversonly(self):
-        self.suite = BokChoyTestSuite('', serversonly=True)
-        self.assertEqual(self.suite.cmd.strip(), "")
+        suite = BokChoyTestSuite('', serversonly=True)
+        self.assertEqual(suite.cmd.strip(), "")
 
     def test_test_dir(self):
         test_dir = 'foo'
-        self.suite = BokChoyTestSuite('', test_dir=test_dir)
-        self.assertEqual(self.suite.cmd, self._expected_command(name=test_dir))
+        suite = BokChoyTestSuite('', test_dir=test_dir)
+        self.assertEqual(
+            suite.cmd.strip(),
+            self._expected_command(name=test_dir)
+        )
