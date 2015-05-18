@@ -855,6 +855,14 @@ class CourseFields(object):
         scope=Scope.settings
     )
 
+    minimum_grade_credit = Float(
+        display_name=_("Minimum Grade For Credit"),
+        help=_(
+            "Set the course minimum grade in decimal between 0.0 and 1.0"
+        ),
+        scope=Scope.settings,
+    )
+
 
 class CourseModule(CourseFields, SequenceModule):  # pylint: disable=abstract-method
     """
