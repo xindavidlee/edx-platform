@@ -157,7 +157,7 @@ def get_comment_list(request, thread_id, endorsed, page, page_size):
             mark_as_read=True,
             response_skip=response_skip,
             response_limit=page_size
-         )
+        )
     except CommentClientRequestError:
         raise Http404
 

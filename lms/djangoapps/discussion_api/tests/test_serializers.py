@@ -119,6 +119,9 @@ class SerializerTestMixin(CommentsServiceMockMixin):
 class ThreadSerializerTest(SerializerTestMixin, ModuleStoreTestCase):
     """Tests for ThreadSerializer."""
     def make_cs_content(self, overrides):
+        """
+        Create a thread with the given overrides, plus some useful test data.
+        """
         merged_overrides = {
             "course_id": unicode(self.course.id),
             "user_id": str(self.author.id),
@@ -197,6 +200,9 @@ class ThreadSerializerTest(SerializerTestMixin, ModuleStoreTestCase):
 class CommentSerializerTest(SerializerTestMixin, ModuleStoreTestCase):
     """Tests for CommentSerializer."""
     def make_cs_content(self, overrides):
+        """
+        Create a comment with the given overrides, plus some useful test data.
+        """
         merged_overrides = {
             "user_id": str(self.author.id),
             "username": self.author.username
@@ -247,7 +253,7 @@ class CommentSerializerTest(SerializerTestMixin, ModuleStoreTestCase):
             "id": "test_root",
             "children": [
                 self.make_cs_content({
-                   "id": "test_child_1",
+                    "id": "test_child_1",
                 }),
                 self.make_cs_content({
                     "id": "test_child_2",

@@ -592,6 +592,10 @@ class GetCommentListTest(CommentsServiceMockMixin, ModuleStoreTestCase):
         self.author = UserFactory.create()
 
     def make_minimal_cs_thread(self, overrides=None):
+        """
+        Create a thread with the given overrides, plus the course_id if not
+        already in overrides.
+        """
         overrides = dict(overrides or {})
         overrides.setdefault("course_id", unicode(self.course.id))
         return make_minimal_cs_thread(overrides)

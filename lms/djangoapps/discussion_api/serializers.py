@@ -158,10 +158,12 @@ class CommentSerializer(_ContentSerializer):
     parent_id = serializers.SerializerMethodField("get_parent_id")
     children = serializers.SerializerMethodField("get_children")
 
-    def get_parent_id(self, obj):
+    def get_parent_id(self, _obj):
+        """Returns the comment's parent's id (taken from the context)."""
         return self.context.get("parent_id")
 
     def get_children(self, obj):
+        """Returns the list of the comment's children, serialized."""
         child_context = dict(self.context)
         child_context["parent_id"] = obj["id"]
         return [CommentSerializer(child, context=child_context).data for child in obj["children"]]
