@@ -23,7 +23,8 @@ define([
         beforeEach(function() {
             this.annotator =  NotesFactory.factory(
                 $('<div />').get(0), {
-                    endpoint: 'http://example.com/'
+                    endpoint: 'http://example.com/',
+                    eventStringLimit: 300
                 }
             );
             spyOn(Logger, 'log');
@@ -67,11 +68,9 @@ define([
                 'edx.course.student_notes.added', {
                     'note_id': 'note-123',
                     'note_text': 'text-123',
-                    'note_text_truncated': false,
                     'tags': ["tag1", "tag2"],
-                    'tags_truncated': false,
                     'highlighted_content': 'quote-123',
-                    'highlighted_content_truncated': false,
+                    'truncated': [],
                     'component_usage_id': 'usage-123'
                 }
             );
@@ -90,15 +89,11 @@ define([
                 'edx.course.student_notes.edited', {
                     'note_id': 'note-123',
                     'old_note_text': 'text-123',
-                    'old_note_text_truncated': false,
                     'note_text': 'text-456',
-                    'note_text_truncated': false,
                     'old_tags': ["tag1", "tag2"],
-                    'old_tags_truncated': false,
                     'tags': [],
-                    'tags_truncated': false,
                     'highlighted_content': 'quote-123',
-                    'highlighted_content_truncated': false,
+                    'truncated': [],
                     'component_usage_id': 'usage-123'
                 }
             );
@@ -123,11 +118,9 @@ define([
                 'edx.course.student_notes.deleted', {
                     'note_id': 'note-123',
                     'note_text': 'text-123',
-                    'note_text_truncated': false,
                     'tags': ["tag1", "tag2"],
-                    'tags_truncated': false,
                     'highlighted_content': 'quote-123',
-                    'highlighted_content_truncated': false,
+                    'truncated': [],
                     'component_usage_id': 'usage-123'
                 }
             );
@@ -155,15 +148,11 @@ define([
                 'edx.course.student_notes.edited', {
                     'note_id': 'note-123',
                     'old_note_text': Helpers.TRUNCATED_TEXT,
-                    'old_note_text_truncated': true,
                     'old_tags': ["review"],
-                    'old_tags_truncated': true,
                     'tags': ["short", "tags", "will", "stay"],
-                    'tags_truncated': true,
                     'note_text': Helpers.TRUNCATED_TEXT,
-                    'note_text_truncated': true,
                     'highlighted_content': Helpers.TRUNCATED_TEXT,
-                    'highlighted_content_truncated': true,
+                    'truncated': ["note_text", "highlighted_content", "tags", "old_note_text", "old_tags"],
                     'component_usage_id': 'usage-123'
                 }
             );
