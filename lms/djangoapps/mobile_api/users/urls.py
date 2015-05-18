@@ -15,10 +15,11 @@ USERNAME_PATTERN = r'(?P<username>[\w.+-]+)'
 def log_exec_time(fn):
     t1 = time.time()
     os.system('echo Calling... >> /edx/app/edxapp/edx-platform/test.log')
-    fn()
+    res = fn()
     dbstr = 'total time: ' + str(time.time() - t1)
     os.system('echo "' + dbstr + '" >> /edx/app/edxapp/edx-platform/test.log')
     os.system('echo >> /edx/app/edxapp/edx-platform/test.log')
+    return res
 
 
 urlpatterns = patterns(
