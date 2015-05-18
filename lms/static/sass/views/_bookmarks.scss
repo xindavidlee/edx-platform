@@ -1,12 +1,11 @@
 // Rules for placing bookmarks and search button side by side
 .wrapper-course-modes {
   border-bottom: 1px solid $gray-l3;
-  display: table;
-  width: 98%;
-  padding: 6px 3px;
+  padding: ($baseline/4);
 
   > div {
-    display: table-cell;
+    @include box-sizing(border-box);
+    display: inline-block;
   }
 }
 
@@ -19,28 +18,26 @@
 
   button {
     &.is-active {
+      background-color: $white;
       &:before {
         content: "\f02e";
         font-family: FontAwesome;
       }
-
-      background-color: $white;
     }
 
     &.is-inactive {
+      background: none;
       &:before {
           content: "\f097";
           font-family: FontAwesome;
       }
-
-      background: none;
     }
   }
 
   .bookmarks-button {
     background: none;
     border-radius: ($baseline/4);
-    padding: 9px 8px 10px;
+    padding: ($baseline/2);
     width: 100%;
 
     &:hover {
@@ -64,9 +61,9 @@
   padding-top: $baseline;
 
   .bookmarks-results-list-item {
+    @include padding(($baseline/4), $baseline, ($baseline/2), $baseline);
     display: block;
     border: 1px solid $gray;
-    @include padding(($baseline/4), $baseline, ($baseline/2), $baseline);
     border-radius: ($baseline/4);
     margin-bottom: $baseline;
 
@@ -82,8 +79,8 @@
   }
 
   .list-item-date {
-    color: $gray;
     @extend %t-title7;
+    color: $gray;
   }
 
   a.bookmarks-results-list-item:before {
@@ -122,18 +119,18 @@
 }
 
 .bookmarks-empty-header {
-  margin-bottom: ($baseline/2);
   @extend %t-title5;
+  margin-bottom: ($baseline/2);
 }
 
 .bookmarks-empty-detail {
-  @extend %t-title9;
+  @extend %t-copy-sub1;
   overflow: hidden;
 }
 
 .bookmarks-empty-detail-title {
-  width: 85%;
   @include float(left);
+  width: 85%;
 }
 
 .bookmarks-empty-detail-bookmark-button {

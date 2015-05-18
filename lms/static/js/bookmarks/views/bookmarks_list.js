@@ -7,7 +7,7 @@
 
         return Backbone.View.extend({
 
-            el: '#courseware-results-list',
+            el: '.courseware-results-list',
             coursewareContentElement: '#course-content',
 
             errorIcon: '<i class="fa fa-fw fa-exclamation-triangle message-error" aria-hidden="true"></i>',
