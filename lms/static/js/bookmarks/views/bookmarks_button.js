@@ -25,12 +25,6 @@
                 });
             },
 
-            render: function () {
-                this.$el.html(this.template({}));
-                this.delegateEvents();
-                return this;
-            },
-
             toggleBookmarksListView: function () {
                 if (this.bookmarksListView.isVisible()) {
                     this.bookmarksListView.hideBookmarks();

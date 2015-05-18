@@ -162,7 +162,11 @@ ${fragment.foot_html()}
 
       <div class="wrapper-course-modes">
 
-          <div class="courseware-bookmarks-button"></div>
+          <div class="courseware-bookmarks-button">
+              <button type="button" class="bookmarks-button is-inactive" aria-pressed="false">
+                  Bookmarks
+              </button>
+          </div>
 
           % if settings.FEATURES.get('ENABLE_COURSEWARE_SEARCH'):
             <div id="courseware-search-bar" class="search-bar courseware-search-bar" role="search" aria-label="Course">
@@ -226,16 +230,6 @@ ${fragment.foot_html()}
 
   </div>
 </div>
-
-<%block name="bookmarks">
-    <script>
-        (function (require) {
-          require(['js/bookmarks/views/bookmarks_button'], function(bookmarksButtonView) {
-            new bookmarksButtonView({}).render();
-          });
-        }).call(this, require || RequireJS.require);
-    </script>
-</%block>
 
 <nav class="nav-utilities ${"has-utility-calculator" if course.show_calculator else ""}" aria-label="${_('Course Utilities')}">
   ## Utility: Chat

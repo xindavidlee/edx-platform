@@ -73,7 +73,7 @@ define(['backbone', 'jquery', 'underscore', 'js/common_helpers/ajax_helpers', 'j
                     spyOn(bookmarksButtonView, 'toggleBookmarksListView').andCallThrough();
                     spyOn(bookmarksButtonView.bookmarksListView, 'loadBookmarks').andReturn(true);
 
-                    bookmarksButtonView.render();
+                    bookmarksButtonView.delegateEvents();
 
                     expect(bookmarksButtonView.$('.bookmarks-button')).toHaveAttr('aria-pressed', 'false');
                     expect(bookmarksButtonView.$('.bookmarks-button')).toHaveClass('is-inactive');
@@ -95,7 +95,6 @@ define(['backbone', 'jquery', 'underscore', 'js/common_helpers/ajax_helpers', 'j
                     var bookmarksListView = bookmarksButtonView.bookmarksListView;
 
                     spyOn(bookmarksListView, 'courseId').andReturn('COURSE_ID');
-                    bookmarksButtonView.render();
                     bookmarksButtonView.$('.bookmarks-button').click();
 
                     expect($('#loading-message').text().trim()).toBe(bookmarksListView.loadingMessage);
@@ -114,7 +113,6 @@ define(['backbone', 'jquery', 'underscore', 'js/common_helpers/ajax_helpers', 'j
 
                     spyOn(bookmarksListView, 'visitBookmark');
 
-                    bookmarksButtonView.render();
                     bookmarksButtonView.$('.bookmarks-button').click();
 
                     AjaxHelpers.respondWithJson(requests, createBookmarksData());
@@ -126,7 +124,6 @@ define(['backbone', 'jquery', 'underscore', 'js/common_helpers/ajax_helpers', 'j
                 it("shows error message for HTTP 500", function () {
                     var requests = AjaxHelpers.requests(this);
 
-                    bookmarksButtonView.render();
                     bookmarksButtonView.$('.bookmarks-button').click();
 
                     AjaxHelpers.respondWithError(requests);
