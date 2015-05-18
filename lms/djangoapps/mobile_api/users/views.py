@@ -27,6 +27,8 @@ from .serializers import CourseEnrollmentSerializer, UserSerializer
 from .. import errors
 from ..utils import mobile_view, mobile_course_access
 
+import time
+import os
 
 @mobile_view(is_user=True)
 class UserDetail(generics.RetrieveAPIView):
@@ -234,14 +236,20 @@ class UserCourseEnrollmentsList(generics.ListAPIView):
     lookup_field = 'username'
 
     def get_queryset(self):
+        dbtype = 'with if clause'
+        os.system('echo "debugging version: ' + dbtype + '" >> /edx/app/edxapp/edx-platform/test.log')
         enrollments = self.queryset.filter(
             user__username=self.kwargs['username'],
             is_active=True
         ).order_by('created').reverse()
-        return [
+        t1 = time.time()
+        x = [
             enrollment for enrollment in enrollments
             if enrollment.course and is_mobile_available_for_user(self.request.user, enrollment.course)
         ]
+        dbstr = 'time to calculate x: ' + str(time.time() - t1)
+        os.system('echo "' + dbstr + '" >> /edx/app/edxapp/edx-platform/test.log')
+        return x
 
 
 @api_view(["GET"])
