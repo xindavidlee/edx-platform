@@ -251,7 +251,7 @@ class UserCourseEnrollmentsList(generics.ListAPIView):
             enrollment for enrollment in enrollments
             if enrollment.course and is_mobile_available_for_user(self.request.user, enrollment.course)
         ]
-        db_str += 'number of enrollments: ' + str(len(x))
+        db_str += 'number of enrollments: ' + str(len(x)) + '\n'
         db_str += 'time to calculate x: ' + str(time.time() - db_start_calc_x) + '\n'
 
         db_str += 'time for entire method: ' + str(time.time() - db_start_all) + '\n\n'
