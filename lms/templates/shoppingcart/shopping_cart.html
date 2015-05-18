@@ -14,17 +14,17 @@ from django.utils.translation import ugettext as _
 
   <div class="container">
     % if shoppingcart_items:
-          <%block name="billing_details_highlight">
-           % if order.order_type == 'business':
-              <li class="billing">${_('Billing Details')}</li>
-           % else:
-              <li class="billing hidden">${_('Billing Details')}</li>
-           % endif
-          </%block>
+      <%block name="billing_details_highlight">
+        % if order.order_type == 'business':
+          <li class="billing">${_('Billing Details')}</li>
+        % else:
+          <li class="billing hidden">${_('Billing Details')}</li>
+        % endif
+      </%block>
 
-       % if is_course_enrollment_closed:
+      % if is_course_enrollment_closed:
         <p id="expiry-msg">${_('{course_names} has been removed because the enrollment period has closed.').format(course_names=appended_expired_course_names)}</p>
-       % endif:
+      % endif
    <%
       discount_applied = False
       order_type = 'personal'
@@ -32,39 +32,39 @@ from django.utils.translation import ugettext as _
 
     <article class="wrapper confirm-enrollment shopping-cart cart-view" aria-label="${_('Shopping Cart')}">
       % for item, course in shoppingcart_items:
-         % if loop.index > 0 :
+        % if loop.index > 0 :
           <hr>
         %endif
         % if item.order.order_type == 'business':
-         <% order_type = 'business' %>
+          <% order_type = 'business' %>
         %endif
-       <div class="user-data">
+        <div class="user-data">
         <div class="clearfix">
         <div class="image">
 
-             <img style="width: 100%; height: 100%;" src="${course_image_url(course)}"
-                  alt="${course.display_number_with_default | h} ${get_course_about_section(course, 'title')} Cover Image" />
+        <img src="${course_image_url(course)}"
+            alt="${course.display_number_with_default | h} ${get_course_about_section(course, 'title')} ${_('Cover Image')}" />
 
         </div>
         <div class="data-input">
           <h3>${_('Registration for:')} <span class="pull-right">${_('Course Dates:')}</span></h3>
           <h1>${ course.display_name }</h1><span class="pull-right">${course.start_datetime_text()} -  ${course.end_datetime_text()}</span>
-          <hr />
+          <hr>
           <div class="three-col">
               <div class="col-1">
                   % if item.list_price != None:
-                  <% discount_applied = True %>
-                  <div class="price">${_('Price per student:')} <span class="line-through">  ${currency_symbol}${"{0:0.2f}".format(item.list_price)}</span></div>
-                  <div class="price green">${_('Discount Applied:')} <span>  ${currency_symbol}${"{0:0.2f}".format(item.unit_cost)} </span></div>
+                    <% discount_applied = True %>
+                    <div class="price">${_('Price per student:')} <span class="line-through">  ${currency_symbol}${"{0:0.2f}".format(item.list_price)}</span></div>
+                    <div class="price green">${_('Discount Applied:')} <span>  ${currency_symbol}${"{0:0.2f}".format(item.unit_cost)} </span></div>
                   % else:
-                  <div class="price">${_('Price per student:')} <span>  ${currency_symbol}${"{0:0.2f}".format(item.unit_cost)}</span></div>
+                    <div class="price">${_('Price per student:')} <span>  ${currency_symbol}${"{0:0.2f}".format(item.unit_cost)}</span></div>
                   % endif
               </div>
               <div class="col-2">
                 <div class="numbers-row">
                   <label for="students">${_('Students:')}</label>
                   <div class="counter">
-                      <input maxlength="3" title="Input qty and press enter." max="999" type="text" name="students" value="${item.qty}" id="${item.id}" data-unit-cost="${item.unit_cost}" data-qty="${item.qty}">
+                      <input maxlength="3" title="${_('Input qty and press enter.')}" max="999" type="text" name="students" value="${item.qty}" id="${item.id}" data-unit-cost="${item.unit_cost}" data-qty="${item.qty}">
                   </div>
                   <button class="inc button"><i class="icon fa fa-caret-up" aria-hidden="true"><span>+</span></i></button><button class="dec button"><i class="icon fa fa-caret-down"></i></button>
                       <!--<a name="updateBtn" class="updateBtn hidden" id="updateBtn-${item.id}" href="#">update</a>-->
@@ -79,56 +79,56 @@ from django.utils.translation import ugettext as _
         </div>
             </div>
 
-    </div>
+        </div>
       % endfor
         <div class="discount">
 
             <div class="code-text">
-             % if not discount_applied:
-             <div class="code-input">
+            % if not discount_applied:
+              <div class="code-input">
                 <input type="text" placeholder="${_('discount or activation code')}" id="input_code">
                 <button type="submit" class="blue" id="submit-code">${_('Apply')}</button>
                 <span class="error-text hidden" id="code" ></span>
-             </div>
-             % else:
-             <div class="code-applied">
+              </div>
+            % else:
+              <div class="code-applied">
                 <span class="green"><i class="icon fa fa-check-square-o" aria-hidden="true"></i>${_('code has been applied')}</span>
                 <button type="submit" class="blue-border" id="submit-reset-redemption">${_('Reset')}</button>
-             </div>
-              %endif
+              </div>
+            % endif
                 <span class="pull-right">${_('TOTAL:')} <b id="total-amount" data-amount="${'{0:0.2f}'.format(amount)}">${currency_symbol}${"{0:0.2f}".format(amount)} ${currency.upper()}</b></span>
             </div>
         </div>
         <div class="col-two">
             <div class="col-2 relative">
                % if order_type == 'business':
-                <div name="billing">
-                    <button type="submit" name="billing-details">${_('Billing Details')}<i class="icon fa fa-caret-right" aria-hidden="true"></i></button>
-                      <p>
-                          ${_('After this purchase is complete, a receipt is generated with relative billing details and registration codes for students.')}
-                      </p>
-                </div>
-                 <div name="payment" class="hidden">
-                  <div id="processor_form">
-                    ${form_html}
+                  <div name="billing">
+                      <button type="submit" name="billing-details">${_('Billing Details')}<i class="icon fa fa-caret-right" aria-hidden="true"></i></button>
+                        <p>
+                            ${_('After this purchase is complete, a receipt is generated with relative billing details and registration codes for students.')}
+                        </p>
                   </div>
-                  <p>
-                      ${_('After this purchase is complete, {username} will be enrolled in this course.').format(username=u'<br/><b>{username}</b>'.format(username=order.user.username))}
-                  </p>
-                </div>
+                   <div name="payment" class="hidden">
+                    <div id="processor_form">
+                      ${form_html}
+                    </div>
+                    <p>
+                        ${_('After this purchase is complete, {username} will be enrolled in this course.').format(username=u'<br/><b>{username}</b>'.format(username=order.user.username))}
+                    </p>
+                  </div>
                % else:
-                <div name="payment">
-                  ${form_html}
-                  <p>
-                      ${_('After this purchase is complete, {username} will be enrolled in this course.').format(username=u'<br/><b>{username}</b>'.format(username=order.user.username))}
-                  </p>
-                </div>
-                <div name="billing" class="hidden">
-                    <button type="submit" name="billing-details">${_('Billing Details')}<i class="icon fa fa-caret-right" aria-hidden="true"></i></button>
-                      <p>
-                          ${_('After this purchase is complete, a receipt is generated with relative billing details and registration codes for students.')}
-                      </p>
-                </div>
+                  <div name="payment">
+                    ${form_html}
+                    <p>
+                        ${_('After this purchase is complete, {username} will be enrolled in this course.').format(username=u'<br/><b>{username}</b>'.format(username=order.user.username))}
+                    </p>
+                  </div>
+                  <div name="billing" class="hidden">
+                      <button type="submit" name="billing-details">${_('Billing Details')}<i class="icon fa fa-caret-right" aria-hidden="true"></i></button>
+                        <p>
+                            ${_('After this purchase is complete, a receipt is generated with relative billing details and registration codes for students.')}
+                        </p>
+                  </div>
                %endif
             </div>
         </div>

@@ -1,20 +1,23 @@
 // lms - views - shopping cart
 // ====================
 
+$enrollment-details-width-difference: $baseline*11.85;
+$data-input-width-difference: $baseline*12.25;
+$date-span-width-difference: $baseline*35;
 $cart-list-border: 1px solid $border-color-1;
 $hr-border: 1px solid $dark-gray2;
 $input-border: 2px solid $dark-gray2;
 $discount-border: 2px solid $light-gray1;
 $steps-border: 3px solid $light-gray1;
 $light-border: 1px solid $gray-l5;
-$submit-hover-color: #1F8FC2;
+$expiry-border-color: #F0F0F0;
+$submit-hover-background-color: #1F8FC2;
+$contact-support-background-color: #9B9B9B;
+$card-errors-background-color: #FFEEF5;
 $course-title-color: #4A4A46;
 $shopping-cart-input-color: #666;
 $enrollment-text-color: #9B9B93;
-$contact-support-background-color: #9B9B9B;
-$empty-cart-text-color: #9d9d9d;
-$expiry-border-color: #f0f0f0;
-$card-errors-background: #FFEEF5;
+$empty-cart-text-color: #9D9D9D;
 
 .pull-right {
   @include float(right);
@@ -41,13 +44,13 @@ $card-errors-background: #FFEEF5;
 }
 
 .cart-errors {
+  @include text-align(center);
   @include font-size(15);
   display: none;
   margin-bottom: $baseline;
   border-bottom: 1px solid $pink;
   padding: ($baseline/2) 0;
-  background: $card-errors-background;
-  text-align: center;
+  background: $card-errors-background-color;
   color: $pink;
   font-family: $sans-serif;
 }
@@ -80,7 +83,7 @@ $card-errors-background: #FFEEF5;
   .enrollment-details {
     @include float(left);
     margin-bottom: ($baseline);
-    width: calc(100% - 237px);
+    width: calc(100% - #{$enrollment-details-width-difference});
 
     .sub-title {
       @extend %t-icon4;
@@ -129,13 +132,13 @@ $card-errors-background: #FFEEF5;
 
   a.link-button {
     @include float(right);
+    @include text-align(center);
     @extend %t-icon3;
     display: inline-block;
     border-radius: 3px;
     background-clip: padding-box;
     padding: ($baseline*0.3) ($baseline*0.9);
     width: ($baseline*12.5);
-    text-align: center;
     text-transform: none;
     text-decoration: none;
     color: $white;
@@ -150,11 +153,11 @@ $card-errors-background: #FFEEF5;
 
   button[type="submit"] {
     @include float(right);
+    @include border-radius(3px);
     @extend %t-icon3;
     display: inline-block;
     box-shadow: 0 1px 0 0 $blue2 inset;
     border: 1px solid $blue2;
-    border-radius: 3px;
     background-color: $blue2;
     background-image: linear-gradient($blue2, $blue2);
     background-clip: padding-box;
@@ -176,11 +179,11 @@ $card-errors-background: #FFEEF5;
 
 .shopping-cart {
   a.blue {
+    @include border-radius(3px);
     @extend %t-icon3;
     @extend %t-regular;
     display: inline-block;
     margin: ($baseline/2) 0 $baseline 0;
-    border-radius: 3px;
     background: $blue2;
     padding: $baseline ($baseline*2);
     color: white;
@@ -296,14 +299,14 @@ $card-errors-background: #FFEEF5;
 
       img {
         width: 100%;
-        height: auto;
+        height: 100%;
       }
     }
 
     .data-input {
       @include float(left);
       @include margin-left($baseline*1.25);
-      width: calc(100% - 245px);
+      width: calc(100% - #{$data-input-width-difference});
 
       h3, h3 span {
         @include line-height(13.51);
@@ -335,7 +338,7 @@ $card-errors-background: #FFEEF5;
       span.date {
         @include float(right);
         @include text-align(right);
-        width: calc(100% - 700px);
+        width: calc(100% - #{$date-span-width-difference});
       }
 
       hr {
@@ -393,12 +396,13 @@ $card-errors-background: #FFEEF5;
 
             .counter {
               @include margin-left($baseline*1.25);
+              @include border-radius(3px);
               @include padding($baseline*0.3, $baseline*1.5, $baseline*0.3, $baseline/2);
               display: inline-block;
               border: $input-border;
-              border-radius: 3px;
 
               input[type="text"] {
+                @include text-align(center);
                 @include font-size(25);
                 @extend %t-strong;
                 box-shadow: none;
@@ -406,7 +410,6 @@ $card-errors-background: #FFEEF5;
                 padding: ($baseline*0.4) 0;
                 width: ($baseline*3.75);
                 height: auto;
-                text-align: center;
                 color: $shopping-cart-input-color;
                 font-family: $sans-serif;
                 font-style: normal;
@@ -504,9 +507,9 @@ $card-errors-background: #FFEEF5;
           button.btn-remove {
             @include float(right);
             opacity: 0.8;
-            background: none;
             box-shadow: none;
             border: none;
+            background: none;
             width: auto;
             height: auto;
             text-shadow: none;
@@ -566,12 +569,12 @@ $card-errors-background: #FFEEF5;
 
       input[type="text"] {
         @extend %t-strong;
-        font-style: normal;
-        font-family: $sans-serif;
         border: $input-border;
         padding: ($baseline*0.4) ($baseline*0.6);
         width: ($baseline*13);
         height: auto;
+        font-family: $sans-serif;
+        font-style: normal;
 
         // STATE: focus
         &:focus {
@@ -609,10 +612,10 @@ $card-errors-background: #FFEEF5;
       }
 
       button[type="submit"] {
-        padding: ($baseline*0.45) ($baseline*1.75);
         box-shadow: none;
         border: $input-border;
         background: $white;
+        padding: ($baseline*0.45) ($baseline*1.75);
         text-shadow: none;
         color: $dark-gray2;
 
@@ -638,7 +641,7 @@ $card-errors-background: #FFEEF5;
       &:hover {
         box-shadow: none;
         border: 1px solid transparent;
-        background: $submit-hover-color;
+        background: $submit-hover-background-color;
       }
     }
   }
@@ -668,8 +671,8 @@ $card-errors-background: #FFEEF5;
         margin: 0;
         width: ($baseline*60);
         word-wrap: break-word;
-        font-style: normal;
         font-family: $sans-serif;
+        font-style: normal;
       }
     }
 
@@ -679,9 +682,9 @@ $card-errors-background: #FFEEF5;
 
       span.radio-group {
         @include margin($baseline/2, 0, $baseline/2, $baseline/4);
+        @include border-radius(3px);
         display: inline-block;
         border: $input-border;
-        border-radius: 3px;
 
         // CASE: is first child
         &:first-child {
@@ -765,8 +768,8 @@ $card-errors-background: #FFEEF5;
         display: inline-block;
         padding: ($baseline/2) ($baseline*1.25);
         color: $dark-gray1;
-        font-style: normal;
         font-family: $sans-serif;
+        font-style: normal;
       }
     }
   }
@@ -803,8 +806,8 @@ $card-errors-background: #FFEEF5;
 
     .col-half {
       @include float(left);
+      @include border-radius(4px);
       margin-bottom: ($baseline*0.75);
-      border-radius: 4px;
       background: $light-gray1;
       padding: $baseline;
       width: 45%;
@@ -848,9 +851,9 @@ $card-errors-background: #FFEEF5;
   }
 
   .gray-bg {
+    @include border-radius(3px);
     @include padding($baseline, $baseline, $baseline, $baseline*1.5);
     margin: $baseline 0;
-    border-radius: 3px;
     background: $light-gray1;
     overflow: hidden;
 
@@ -929,14 +932,14 @@ $card-errors-background: #FFEEF5;
   }
 
   table.course-receipt {
-    width: 94%;
     margin: auto;
     margin-bottom: ($baseline*1.35);
+    width: 94%;
 
     thead th {
+      @include text-align(center);
       border-bottom: $hr-border;
       padding: ($baseline*0.4) 0;
-      text-align: center;
       text-transform: uppercase;
       color: $light-gray2;
       font-weight: normal;
@@ -948,7 +951,7 @@ $card-errors-background: #FFEEF5;
 
       // CASE: has last child
       &:last-child {
-        text-align: center;
+        @include text-align(center);
       }
     }
 
@@ -961,9 +964,9 @@ $card-errors-background: #FFEEF5;
       }
 
       td {
+        @include text-align(center);
         padding: ($baseline*0.75) 0;
         width: 30%;
-        text-align: center;
         color: $dark-gray1;
 
         // CASE: index of child is a multiple of 2
@@ -985,15 +988,15 @@ $card-errors-background: #FFEEF5;
 
         // CASE: has last child
         &:last-child {
-          text-align: center;
+          @include text-align(center);
 
           span {
+            @include border-radius(3px);
+            @include text-align(center);
             @include font-size(13);
             display: inline-block;
-            border-radius: 3px;
             padding: ($baseline/10) ($baseline/2);
             min-width: ($baseline*2.75);
-            text-align: center;
             color: $white;
 
             // CASE: has class red
@@ -1013,18 +1016,18 @@ $card-errors-background: #FFEEF5;
 }
 
 .empty-cart {
+  @include text-align(center);
   margin: $baseline 0;
   border-radius: 3px;
   background: $light-gray1;
   padding: $baseline 0;
-  text-align: center;
 
   h2 {
+    @include text-align(center);
     @extend %t-icon3;
     @extend %t-strong;
     margin-top: $baseline;
     margin-bottom: ($baseline/4);
-    text-align: center;
     text-transform: initial;
     letter-spacing: 0;
     color: $contact-support-background-color;
@@ -1032,9 +1035,9 @@ $card-errors-background: #FFEEF5;
   }
 
   p {
+    @include text-align(center);
     @extend %t-icon6;
     text-shadow: 0 1px 1px $white;
-    text-align: center;
     color: $empty-cart-text-color;
     font-family: $sans-serif;
   }
@@ -1074,8 +1077,8 @@ $card-errors-background: #FFEEF5;
 
     .gray-bg {
       margin: 0;
-      padding: ($baseline/2) 0 $baseline 0;
       background: none;
+      padding: ($baseline/2) 0 $baseline 0;
 
       .message-left {
         width: 100%;
