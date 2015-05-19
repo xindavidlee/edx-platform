@@ -91,7 +91,7 @@ def get_footer(is_secure=True):
         "copyright": _footer_copyright(is_edx_domain),
         "logo_image": _footer_logo_img(is_secure, site_name, is_edx_domain),
         "social_links": _footer_social_links(),
-        "navigation_links": _footer_navigation_links(),
+        "navigation_links": _footer_navigation_links(is_edx_domain),
         "mobile_links": _footer_mobile_links(is_secure, site_name),
         "legal_links": _footer_legal_links(),
         "openedx_link": _footer_openedx_link(is_secure, site_name),
@@ -157,56 +157,24 @@ def _footer_social_links():
     return links
 
 
-def _footer_navigation_links():
+def _footer_navigation_links(is_edx_domain):
     """Return the navigation links to display in the footer. """
-    # TODO: make the order configurable in Django settings
-    # TODO: make the title a Django setting
     return [
         {
-            "name": "about",
-            "title": _("About"),
-            "url": marketing_link("ABOUT")
-        },
-        {
-            "name": "news",
-            "title": _("News"),
-            "url": marketing_link("NEWS")
-        },
-        {
-            "name": "contact",
-            "title": _("Contact"),
-            "url": marketing_link("CONTACT")
-        },
-        {
-            "name": "faq",
-            "title": _("FAQ"),
-            "url": marketing_link("FAQ")
-        },
-        {
-            "name": "blog",
-            "title": _("edX Blog"),
-            "url": marketing_link("BLOG")
-        },
-        {
-            "name": "donate",
-            "title": _("Donate to edX"),
-            "url": marketing_link("DONATE")
-        },
-        {
-            "name": "jobs",
-            "title": _("Jobs at edX"),
-            "url": marketing_link("JOBS")
-        },
-        {
-            "name": "terms_of_service",
-            "title": _("Terms of Service"),
-            "url": marketing_link("TOS")
-        },
-        {
-            "name": "privacy_policy",
-            "title": _("Privacy Policy"),
-            "url": marketing_link("PRIVACY")
+            "name": link_name,
+            "title": link_title,
+            "url": link_url
         }
+        for link_name, link_url, link_title in [
+            ("about", marketing_link("ABOUT"), _("About")),
+            ("news", marketing_link("NEWS"), _("News")),
+            ("contact", marketing_link("CONTACT"), _("Contact")),
+            ("faq", marketing_link("FAQ"), _("FAQ")),
+            ("blog", marketing_link("BLOG"), _("edX Blog")),
+            ("donate", marketing_link("DONATE"), _("Donate to edX")),
+            ("jobs", marketing_link("JOBS"), _("Jobs at edX")),
+        ]
+        if link_url and link_url != "#"
     ]
 
 

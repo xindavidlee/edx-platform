@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404
 from django.utils import translation
+from staticfiles.finders import find as staticfiles_find
 from staticfiles.storage import staticfiles_storage
 from django.shortcuts import redirect
 from django_future.csrf import ensure_csrf_cookie
@@ -124,6 +125,23 @@ def _render_footer_html():
     )
 
 
+def _footer_css_name():
+    """TODO """
+    css_name = (
+        settings.FOOTER_RTL_CSS_STATIC_NAME if translation.get_language_bidi()
+        else settings.FOOTER_LTR_CSS_STATIC_NAME
+    )
+
+    # In production, the asset pipeline copies compiled sass
+    # to a css folder.  Unfortunately, this doesn't happen
+    # in devstack, so we load the version of the CSS that
+    # hasn't yet gone through the asset pipeline.
+    return (
+        u"sass/{name}" if settings.DEBUG
+        else u"css/{name}"
+    ).format(name=css_name)
+
+
 def _send_footer_static(request, name):
     """Send static files for the footer.
 
@@ -156,12 +174,13 @@ def _send_footer_static(request, name):
     Returns:
         HttpResponse
     """
-    # In production, we process static files and save them
-    # in the STATIC_ROOT directory.  Our proxy server serves static
-    # files directly from this location.
-    # In development, however, we don't run collectstatic, so
-    # we need to find the files in this repository.
-    path = staticfiles_storage.path(name)
+    # In production, we will load assets from the STATIC_ROOT
+    # directory.  In local development, we don't run collectstatic,
+    # so we need to find the files in their original locations.
+    path = (
+        staticfiles_find(name) if settings.DEBUG
+        else staticfiles_storage.path(name)
+    )
     if path is None:
         raise Http404
 
@@ -280,11 +299,7 @@ def footer(request, extension="json"):
         content = _render_footer_html()
         return HttpResponse(content, status=200)
     elif extension == "css":
-        css_name = (
-            settings.FOOTER_RTL_CSS_STATIC_NAME if translation.get_language_bidi()
-            else settings.FOOTER_LTR_CSS_STATIC_NAME
-        )
-        return _send_footer_static(request, css_name)
+        return _send_footer_static(request, _footer_css_name())
     elif extension == "js":
         return _send_footer_static(request, settings.FOOTER_JS_STATIC_NAME)
     else:

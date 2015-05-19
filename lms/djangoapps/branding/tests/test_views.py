@@ -3,6 +3,7 @@
 import os
 import contextlib
 import json
+from path import path
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.conf import settings
@@ -31,9 +32,9 @@ class TestFooter(TestCase):
     FAKE_STATIC_FILES = [
         (settings.STATIC_ROOT / name).abspath()
         for name in [
-            settings.FOOTER_JS_STATIC_NAME,
-            settings.FOOTER_LTR_CSS_STATIC_NAME,
-            settings.FOOTER_RTL_CSS_STATIC_NAME,
+            path("js") / settings.FOOTER_JS_STATIC_NAME,
+            path("css") / settings.FOOTER_LTR_CSS_STATIC_NAME,
+            path("css") / settings.FOOTER_RTL_CSS_STATIC_NAME,
         ]
     ]
 

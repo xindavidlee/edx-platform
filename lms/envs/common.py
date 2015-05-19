@@ -1255,9 +1255,9 @@ ccx_js = sorted(rooted_glob(PROJECT_ROOT / 'static', 'js/ccx/**/*.js'))
 # These are referred to both by the Django asset pipeline
 # AND by the branding footer API, which uses an internal
 # redirect to serve these files.
-FOOTER_JS_STATIC_NAME = "js/footer-edx.js"
-FOOTER_LTR_CSS_STATIC_NAME = "css/lms-footer-edx.css"
-FOOTER_RTL_CSS_STATIC_NAME = "css/lms-footer-edx-rtl.css"
+FOOTER_JS_STATIC_NAME = "footer-edx.js"
+FOOTER_LTR_CSS_STATIC_NAME = "lms-footer-edx.css"
+FOOTER_RTL_CSS_STATIC_NAME = "lms-footer-edx-rtl.css"
 
 PIPELINE_CSS = {
     'style-vendor': {
@@ -1342,13 +1342,13 @@ PIPELINE_CSS = {
         'source_filenames': [
             'sass/lms-footer-edx.css',
         ],
-        'output_filename': FOOTER_LTR_CSS_STATIC_NAME,
+        'output_filename': path("css") / FOOTER_LTR_CSS_STATIC_NAME,
     },
     'style-edx-footer-rtl': {
         'source_filenames': [
             'sass/lms-footer-edx-rtl.css',
         ],
-        'output_filename': FOOTER_RTL_CSS_STATIC_NAME,
+        'output_filename': path("css") / FOOTER_RTL_CSS_STATIC_NAME,
     },
 }
 
@@ -1445,7 +1445,7 @@ PIPELINE_JS = {
     },
     'footer_edx': {
         'source_filenames': ['js/footer-edx.js'],
-        'output_filename': FOOTER_JS_STATIC_NAME,
+        'output_filename': path("js") / FOOTER_JS_STATIC_NAME,
     }
 }
 
