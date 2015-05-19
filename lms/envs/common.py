@@ -341,9 +341,6 @@ FEATURES = {
     # Show the mobile app links in the footer
     'ENABLE_FOOTER_MOBILE_APP_LINKS': False,
 
-    # Use version 3 of the footer (added May 2015)
-    'ENABLE_FOOTER_V3': False,
-
     # Let students save and manage their annotations
     'ENABLE_EDXNOTES': False,
 
@@ -1799,25 +1796,13 @@ MKTG_URL_LINK_MAP = {
 ################# Social Media Footer Links #######################
 # The names list controls the order of social media
 # links in the footer.
-if FEATURES.get('ENABLE_FOOTER_V3'):
-    SOCIAL_MEDIA_FOOTER_NAMES = [
-        "facebook",
-        "twitter",
-        "linkedin",
-        "weibo",
-        "vk",
-    ]
-else:
-    SOCIAL_MEDIA_FOOTER_NAMES = [
-        "facebook",
-        "twitter",
-        "linkedin",
-        "google_plus",
-        "tumblr",
-        "meetup",
-        "reddit",
-        "youtube",
-    ]
+SOCIAL_MEDIA_FOOTER_NAMES = [
+    "facebook",
+    "twitter",
+    "linkedin",
+    "weibo",
+    "vk",
+]
 
 # The footer URLs dictionary maps social footer names
 # to URLs defined in configuration.
