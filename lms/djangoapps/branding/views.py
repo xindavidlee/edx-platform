@@ -127,7 +127,15 @@ def _render_footer_html():
 
 
 def _footer_css_name():
-    """TODO """
+    """Return the name of the footer CSS static file.
+
+    This takes into account:
+    1) Whether asset pipelining is being used (handles both prod and local dev)
+    2) Text direction (right-to-left support)
+
+    Returns: unicode
+
+    """
     css_name = (
         settings.FOOTER_RTL_CSS_STATIC_NAME if translation.get_language_bidi()
         else settings.FOOTER_LTR_CSS_STATIC_NAME
