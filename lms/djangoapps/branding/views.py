@@ -117,9 +117,6 @@ def courses(request):
 
 def _render_footer_html():
     """Render the footer as HTML. """
-    # TODO: pass information from branding_api.get_footer()
-    # as context to ensure that these are rendered consistently.
-    # TODO: use v3 of the footer for edx.org (waiting on Alasdair's changes).
     return (
         render_to_response("footer-edx-v3.html")
         if settings.FEATURES.get("IS_EDX_DOMAIN", False)
@@ -216,6 +213,14 @@ def footer(request, extension="json"):
                     "name": "google",
                     "image": "http://example.com/google.png",
                     "title": "Google"
+                },
+                # ...
+            ],
+            "legal_links": [
+                {
+                    "url": "http://example.com/terms-of-service.html",
+                    "name": "terms_of_service",
+                    "title': "Terms of Service"
                 },
                 # ...
             ],

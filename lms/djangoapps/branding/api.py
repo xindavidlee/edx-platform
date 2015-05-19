@@ -68,6 +68,14 @@ def get_footer(is_secure=True):
             },
             ...
         ],
+        "legal_links": [
+            {
+                "url": "http://example.com/terms-of-service.html",
+                "name": "terms_of_service",
+                "title': "Terms of Service"
+            },
+            # ...
+        ],
         "openedx_link": {
             "url": "http://open.edx.org",
             "title": "Powered by Open edX",
@@ -85,6 +93,7 @@ def get_footer(is_secure=True):
         "social_links": _footer_social_links(),
         "navigation_links": _footer_navigation_links(),
         "mobile_links": _footer_mobile_links(is_secure, site_name),
+        "legal_links": _footer_legal_links(),
         "openedx_link": _footer_openedx_link(is_secure, site_name),
     }
 
@@ -198,6 +207,26 @@ def _footer_navigation_links():
             "title": _("Privacy Policy"),
             "url": marketing_link("PRIVACY")
         }
+    ]
+
+
+def _footer_legal_links():
+    """Return the legal footer links (e.g. terms of service).
+
+    Returns: list
+    """
+    return [
+        {
+            "name": "terms_of_service",
+            "title": _("Terms of Service"),
+            "url": marketing_link("TOS")
+        },
+        {
+            "name": "privacy_policy",
+            "title": _("Privacy Policy"),
+            "url": marketing_link("PRIVACY")
+        },
+        # TODO: add accessibility policy when it is ready
     ]
 
 

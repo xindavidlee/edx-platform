@@ -135,6 +135,13 @@ class TestFooter(TestCase):
             self.assertIn("url", link)
             self.assertIn("image", link)
 
+        # Legal links
+        self.assertIn("legal_links", json_data)
+        for link in json_data["legal_links"]:
+            self.assertIn("name", link)
+            self.assertIn("title", link)
+            self.assertIn("url", link)
+
         # OpenEdX
         self.assertIn("openedx_link", json_data)
         self.assertIn("url", json_data["openedx_link"])

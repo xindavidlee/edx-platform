@@ -54,7 +54,7 @@ var edx = edx || {};
             footer: {
                 get: function() {
                     $.ajax({
-                        url: 'https://courses.edx.org/api/v1/branding/footer',
+                        url: 'https://courses.edx.org/api/v1/branding/footer.html',
                         type: 'GET',
                         dataType: 'html',
                         success: function( data ) {
