@@ -20,14 +20,15 @@ class TestFooter(TestCase):
 
     # We don't collect static files for unit tests,
     # so the files we expect to exist won't.
-    # For testing purposes, we create the files as part
-    # of this test.  This has two advantages:
+    # Instead, we create the files as part
+    # of the test setup.  This has two advantages:
     #
     # 1) It's fast.
-    # 2) We can easily check which file was used.
+    # 2) We can easily verify which file was used.
     #
     # To achieve (2), we write the file path as the
-    # content of the file.
+    # content of the file, then assert that the response
+    # from the server contains the expected path.
     #
     FAKE_STATIC_FILES = [
         (settings.STATIC_ROOT / name).abspath()
@@ -49,15 +50,15 @@ class TestFooter(TestCase):
         # The content of each file is just the path to the file,
         # so we can check this in the response we receive
         # from the server.
-        for path in cls.FAKE_STATIC_FILES:
-            with open(path, "w") as static_file:
-                static_file.write(path)
+        for static_path in cls.FAKE_STATIC_FILES:
+            with open(static_path, "w") as static_file:
+                static_file.write(static_path)
 
     @classmethod
     def tearDownClass(cls):
         """Remove the fake static files we created. """
-        for path in cls.FAKE_STATIC_FILES:
-            os.remove(path)
+        for static_path in cls.FAKE_STATIC_FILES:
+            os.remove(static_path)
 
     def setUp(self):
         """Clear the configuration cache. """
