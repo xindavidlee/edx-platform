@@ -1,6 +1,7 @@
 """Views for the branding app. """
 import logging
 
+from path import path
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404
@@ -301,6 +302,6 @@ def footer(request, extension="json"):
     elif extension == "css":
         return _send_footer_static(request, _footer_css_name())
     elif extension == "js":
-        return _send_footer_static(request, settings.FOOTER_JS_STATIC_NAME)
+        return _send_footer_static(request, path("js") / settings.FOOTER_JS_STATIC_NAME)
     else:
         raise Http404
